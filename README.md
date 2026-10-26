@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# My Music App
 
-## Getting Started
+Plateforme d'apps de Mymusicads pour les artistes. Première app : **Inspire**, une bibliothèque d'inspirations vidéo (TikTok et Reels Instagram) sélectionnées par l'équipe.
 
-First, run the development server:
+- `/` : accueil My Music App (liste des apps, dans `src/lib/apps.ts`)
+- `/inspire` : fil plein écran ou grille, filtres, favoris
+- `/compte` : inscription / connexion des artistes (pseudo + mot de passe)
+- `/admin` : ajout et configuration des vidéos, artistes inscrits (protégé par mot de passe)
+- `/api/inbox?key=…` : réception des vidéos partagées depuis le Raccourci iPhone
+
+## Développement local
 
 ```bash
+npm install
+npm run db:migrate:local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Puis ouvrir http://localhost:3000. En local, l'admin n'a pas de mot de passe.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Mise en ligne (Cloudflare Workers + D1)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run db:migrate:remote   # si une nouvelle migration a été ajoutée dans migrations/
+npm run deploy
+```
 
-## Learn More
+Secrets à définir une fois sur Cloudflare :
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npx wrangler secret put SITE_PASSWORD --name inspire   # mot de passe de l'admin
+npx wrangler secret put INBOX_KEY --name inspire       # clé du Raccourci iPhone
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Organisation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/lib/db.ts` : vidéos et filtres (base D1)
+- `src/lib/accounts.ts` : comptes artistes, sessions, favoris
+- `src/lib/links.ts` : analyse des liens TikTok / Instagram
+- `src/lib/thumbnails.ts` : vignettes conservées en base (les liens TikTok expirent)
+- `src/lib/classify.ts` : tags proposés automatiquement (règles ; IA si `ANTHROPIC_API_KEY` est définie)
+- `src/middleware.ts` : protection de l'admin et de l'API
+- `migrations/` : structure de la base
