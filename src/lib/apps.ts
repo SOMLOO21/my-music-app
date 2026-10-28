@@ -17,4 +17,11 @@ export const APPS: MusicApp[] = [
     emoji: "💡",
     color: "#c8ff3d",
   },
+  {
+    name: "Link",
+    description: "Tes smart links Spotify, Apple Music, Deezer, avec le pixel Meta intégré pour suivre tes campagnes.",
+    href: "/link",
+    emoji: "🔗",
+    color: "#a78bfa",
+  },
 ];
