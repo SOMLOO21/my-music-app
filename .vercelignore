@@ -1,0 +1,8 @@
+# Jamais envoyés à Vercel : accès, bases et fichiers de construction locaux.
+.env*
+local.db*
+data
+.open-next
+.wrangler
+.next
+node_modules
