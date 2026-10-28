@@ -12,8 +12,8 @@ const statements = fs
   .filter((l) => tables.some((t) => l.startsWith(`INSERT INTO "${t}"`)))
   .map((l) => l.replace(/^INSERT INTO/, "INSERT OR REPLACE INTO"));
 
-// Mot de passe saisi sans être affiché.
-const password = await new Promise((resolve) => {
+// Mot de passe : variable ADMIN_PASSWORD (saisie par le terminal), sinon demandé ici sans être affiché.
+const password = process.env.ADMIN_PASSWORD || await new Promise((resolve) => {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: true });
   rl._writeToOutput = () => {};
   process.stdout.write("Mot de passe de l'admin : ");
@@ -23,6 +23,10 @@ const password = await new Promise((resolve) => {
     resolve(answer);
   });
 });
+if (!password) {
+  console.error("Mot de passe vide : import annulé.");
+  process.exit(1);
+}
 const auth = "Basic " + Buffer.from(`admin:${password}`).toString("base64");
 
 let batch = [];
