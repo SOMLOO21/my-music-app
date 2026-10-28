@@ -12,32 +12,37 @@ Plateforme d'apps de Mymusicads pour les artistes. Première app : **Inspire**, 
 
 ```bash
 npm install
-npm run db:migrate:local
+echo "TURSO_DATABASE_URL=file:local.db" >> .env.local   # base de test locale
+npm run db:migrate
 npm run dev
 ```
 
 Puis ouvrir http://localhost:3000. En local, l'admin n'a pas de mot de passe.
 
-## Mise en ligne (Cloudflare Workers + D1)
+## Mise en ligne (Vercel + Turso)
+
+Chaque envoi sur la branche `main` de GitHub est déployé automatiquement par Vercel.
+Si une nouvelle migration est ajoutée dans `migrations/`, l'appliquer sur la base en ligne :
 
 ```bash
-npm run db:migrate:remote   # si une nouvelle migration a été ajoutée dans migrations/
-npm run deploy
+vercel env pull .env.production.local --environment production
+node --env-file=.env.production.local scripts/migrate.mjs
 ```
 
-Secrets à définir une fois sur Cloudflare :
+Variables d'environnement à définir sur Vercel :
 
-```bash
-npx wrangler secret put SITE_PASSWORD --name inspire   # mot de passe de l'admin
-npx wrangler secret put INBOX_KEY --name inspire       # clé du Raccourci iPhone
-```
+- `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` : base Turso (ajoutées par l'intégration Turso)
+- `SITE_PASSWORD` : mot de passe de l'admin
+- `INBOX_KEY` : clé du Raccourci iPhone
 
 ## Organisation
 
-- `src/lib/db.ts` : vidéos et filtres (base D1)
+- `src/lib/sql.ts` : connexion à la base Turso (SQLite)
+- `src/lib/db.ts` : vidéos et filtres
 - `src/lib/accounts.ts` : comptes artistes, sessions, favoris
 - `src/lib/links.ts` : analyse des liens TikTok / Instagram
 - `src/lib/thumbnails.ts` : vignettes conservées en base (les liens TikTok expirent)
 - `src/lib/classify.ts` : tags proposés automatiquement (règles ; IA si `ANTHROPIC_API_KEY` est définie)
-- `src/middleware.ts` : protection de l'admin et de l'API
-- `migrations/` : structure de la base
+- `src/proxy.ts` : protection de l'admin et de l'API
+- `migrations/` : structure de la base (`npm run db:migrate`)
+- `scripts/import-d1.mjs` : import d'un export de l'ancienne base Cloudflare D1

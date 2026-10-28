@@ -3,6 +3,7 @@
 // - l'admin, la page de partage et l'API demandent le mot de passe (SITE_PASSWORD, identifiant libre) ;
 // - /api/inbox accepte aussi la clé secrète du Raccourci iPhone (?key=INBOX_KEY).
 // En local (`npm run dev`) sans SITE_PASSWORD, tout reste ouvert.
+// (Next.js 16 : ce fichier remplace l'ancien middleware.ts.)
 import { NextResponse, type NextRequest } from "next/server";
 
 // Seules ces zones demandent le mot de passe ; tout le reste (fil, icônes…) est public.
@@ -13,7 +14,7 @@ const PUBLIC_API = ["/api/account", "/api/favorites"];
 const under = (pathname: string, prefixes: string[]) =>
   prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
   if (!under(pathname, PROTECTED) || under(pathname, PUBLIC_API)) return NextResponse.next();
 

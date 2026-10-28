@@ -1,10 +1,10 @@
 // Vignettes : téléchargées une fois puis conservées en base, car les liens d'image
 // fournis par TikTok expirent au bout de quelques jours (et TikTok limite les demandes).
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { sql } from "./sql";
 import { freshTikTokThumbnail, thumbnailExpiresSoon } from "./links";
 import type { Video } from "./types";
 
-const db = () => getCloudflareContext().env.DB;
+const db = () => sql;
 const MAX_BYTES = 1_500_000; // une ligne D1 est limitée à 2 Mo
 
 export async function getStoredThumbnail(videoId: string) {

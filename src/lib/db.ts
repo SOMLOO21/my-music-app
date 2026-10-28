@@ -1,9 +1,8 @@
-// Stockage : base Cloudflare D1 (binding « DB »). En local, `next dev` utilise une copie
-// locale de la base (dossier .wrangler), créée par `npm run db:migrate:local`.
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+// Stockage : base Turso (SQLite), voir ./sql.ts. Structure dans migrations/ (npm run db:migrate).
+import { sql } from "./sql";
 import { FACETS, type FacetKey, type Taxonomy, type Video } from "./types";
 
-const db = () => getCloudflareContext().env.DB;
+const db = () => sql;
 
 export const SEED_TAXONOMY: Taxonomy = {
   // Formats issus du benchmark TikTok Mymusicads.

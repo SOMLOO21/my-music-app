@@ -47,3 +47,6 @@ next-env.d.ts
 .wrangler
 .dev.vars*
 !.dev.vars.example
+
+# Base de test locale (Turso / SQLite)
+local.db*

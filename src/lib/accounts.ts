@@ -1,9 +1,9 @@
 // Comptes artistes : inscription / connexion par pseudo + mot de passe, session longue
 // dans un cookie HttpOnly, favoris enregistrés par compte.
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { sql } from "./sql";
 import { cookies } from "next/headers";
 
-const db = () => getCloudflareContext().env.DB;
+const db = () => sql;
 
 export const SESSION_COOKIE = "diggers_session";
 const SESSION_DAYS = 365;

@@ -1,5 +1,5 @@
 {
-  "name": "diggers-inspire",
+  "name": "my-music-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,15 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
-    "db:migrate:local": "wrangler d1 migrations apply diggers-inspire --local",
-    "db:migrate:remote": "wrangler d1 migrations apply diggers-inspire --remote"
+    "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.134.0",
-    "@opennextjs/cloudflare": "^1.20.12",
+    "@libsql/client": "^0.18.0",
     "next": "^16.4.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
@@ -29,7 +25,6 @@
     "eslint": "^9",
     "eslint-config-next": "^16.4.2",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "wrangler": "^4.151.0"
+    "typescript": "^5"
   }
 }
