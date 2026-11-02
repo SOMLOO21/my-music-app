@@ -4,7 +4,9 @@
 // Monté dans Next.js par src/app/link/[[...path]]/route.ts et src/app/l/[...path]/route.ts.
 import { Hono, type Context } from 'hono';
 import { after } from 'next/server';
-import { currentUser } from '@/lib/accounts';
+import { cookies } from 'next/headers';
+import { getCookie } from 'hono/cookie';
+import { ADMIN_AS_COOKIE, ADMIN_RETURN_COOKIE, SESSION_COOKIE, currentUser, endSession } from '@/lib/accounts';
 import { sql } from '@/lib/sql';
 import { hasConsent, sendCapi } from './meta';
 import { PLATFORMS, PLATFORM_BY_KEY, parsePlatforms } from './platforms';
@@ -40,8 +42,27 @@ async function loadUser(): Promise<User | null> {
     .prepare('SELECT pixel_id, capi_token, test_event_code FROM ml_settings WHERE user_id = ?')
     .bind(u.id)
     .first<Owner>();
-  return { id: u.id, name: u.firstName, pseudo: u.pseudo, pixel_id: s?.pixel_id ?? null, capi_token: s?.capi_token ?? null, test_event_code: s?.test_event_code ?? null };
+  const adminAs = (await cookies()).get(ADMIN_AS_COOKIE)?.value;
+  return {
+    id: u.id, name: u.firstName, pseudo: u.pseudo,
+    pixel_id: s?.pixel_id ?? null, capi_token: s?.capi_token ?? null, test_event_code: s?.test_event_code ?? null,
+    admin: Boolean(adminAs && decodeURIComponent(adminAs) === u.pseudo),
+  };
 }
+
+// Fin du « Mode admin » : on ferme la session ouverte pour l'artiste et on rétablit celle de l'équipe
+app.get('/link/admin-exit', async (c) => {
+  if (!getCookie(c, ADMIN_AS_COOKIE)) return c.redirect('/link');
+  const clear = 'Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0';
+  c.header('Set-Cookie', await endSession(getCookie(c, SESSION_COOKIE)), { append: true });
+  const previous = getCookie(c, ADMIN_RETURN_COOKIE);
+  if (previous && previous !== '-' && /^[a-f0-9]{64}$/.test(previous)) {
+    c.header('Set-Cookie', `${SESSION_COOKIE}=${previous}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${365 * 86_400}`, { append: true });
+  }
+  c.header('Set-Cookie', `${ADMIN_RETURN_COOKIE}=; ${clear}`, { append: true });
+  c.header('Set-Cookie', `${ADMIN_AS_COOKIE}=; ${clear}`, { append: true });
+  return c.redirect('/admin');
+});
 
 // Sans compte : page de présentation, qui renvoie vers la connexion My Music App
 app.get('/link', async (c) => {

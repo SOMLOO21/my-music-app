@@ -6,6 +6,9 @@ import type { Link, User } from '../types';
 
 const APP_CSS = `
 body{background:#fafafa}
+.adminbar{position:sticky;top:0;z-index:6;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;padding:9px 16px;background:#c8ff3d;color:#0b0b0c;font-size:14px}
+.adminbar a{font-weight:700;text-decoration:underline}
+.adminbar+.nav{top:40px}
 .nav{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .nav .in{max-width:1120px;margin:0 auto;height:60px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
 .logo{font-weight:800;font-size:18px;letter-spacing:-.03em;display:flex;align-items:center;gap:8px}
@@ -77,7 +80,11 @@ export function shell(user: User | null, title: string, body: Safe, active = '',
             <a href="/compte" class="btn ghost" style="height:34px" title="Mon compte My Music App">@${user.pseudo}</a>`
         : h`<a href="/" class="hide-m">My Music App</a><a class="btn" href="/compte" style="color:#fff">Connexion</a>`
     }</nav></div></header>`;
-  return layout({ title: `${title} · My Music Link`, css: APP_CSS + extraCss, body: h`${nav}${body}` });
+  // Compte ouvert par l'équipe depuis /admin : bandeau bien visible pour ne pas confondre avec son propre compte
+  const adminBar = user?.admin
+    ? h`<div class="adminbar"><span>🛠 Mode admin · tu es dans le compte de <b>@${user.pseudo}</b></span><a href="/link/admin-exit">Revenir à l'admin</a></div>`
+    : '';
+  return layout({ title: `${title} · My Music Link`, css: APP_CSS + extraCss, body: h`${adminBar}${nav}${body}` });
 }
 
 const flash = (msg?: { err?: string; ok?: string }) =>

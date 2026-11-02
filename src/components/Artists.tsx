@@ -3,9 +3,19 @@
 import { useEffect, useState } from "react";
 import { TEAM_KEY } from "./Feed";
 
-type Artist = { id: string; pseudo: string; first_name: string; last_name: string; created_at: string; favorites: number };
+type Artist = {
+  id: string;
+  pseudo: string;
+  first_name: string;
+  last_name: string;
+  created_at: string;
+  favorites: number;
+  links: number;
+  views: number;
+  clicks: number;
+};
 
-/** Admin : artistes inscrits et réinitialisation de mot de passe. */
+/** Admin : artistes inscrits, réinitialisation de mot de passe et accès à leur My Music Link. */
 export default function Artists() {
   const [artists, setArtists] = useState<Artist[] | null>(null);
   const [message, setMessage] = useState("");
@@ -33,6 +43,19 @@ export default function Artists() {
     setMessage(res.ok ? `Mot de passe de @${a.pseudo} réinitialisé : transmets-le-lui.` : (data.error ?? "Erreur."));
   }
 
+  // Ouvre le compte de l'artiste (session de 2 h) puis son espace My Music Link
+  async function openAccount(a: Artist) {
+    if (!confirm(`Ouvrir le compte de @${a.pseudo} ? Tu verras et pourras modifier ses smart links. « Revenir à l'admin » te ramène à ton compte.`)) return;
+    const res = await fetch("/api/users/impersonate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ userId: a.id }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { redirect?: string; error?: string };
+    if (res.ok && data.redirect) window.location.href = data.redirect;
+    else setMessage(data.error ?? "Impossible d'ouvrir ce compte.");
+  }
+
   return (
     <section className="mx-auto max-w-5xl px-4 pb-12">
       <h2 className="mb-3 text-base font-semibold">Artistes inscrits ({artists?.length ?? "…"})</h2>
@@ -50,8 +73,13 @@ export default function Artists() {
               </p>
               <p className="text-xs text-white/50">
                 Inscrit le {new Date(a.created_at).toLocaleDateString("fr-FR")} · {a.favorites} favori(s)
+                {" · "}
+                {a.links ? `${a.links} smart link(s) · ${a.views} vue(s) · ${a.clicks} clic(s)` : "aucun smart link"}
               </p>
             </div>
+            <button onClick={() => openAccount(a)} className="rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-black">
+              Ouvrir son My Music Link
+            </button>
             <button onClick={() => reset(a)} className="rounded-full border border-white/20 px-3 py-1.5 text-xs">
               Nouveau mot de passe
             </button>

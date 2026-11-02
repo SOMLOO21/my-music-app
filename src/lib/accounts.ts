@@ -120,6 +120,23 @@ export async function startSession(userId: string) {
   return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_DAYS * 86_400}`;
 }
 
+// --- Accès de l'équipe au compte d'un artiste ----------------------------------
+
+/** Cookies posés quand l'équipe ouvre le compte d'un artiste depuis /admin. */
+export const ADMIN_RETURN_COOKIE = "mma_admin_return"; // session de l'admin, rétablie au retour
+export const ADMIN_AS_COOKIE = "mma_admin_as"; // pseudo de l'artiste ouvert (affiche le bandeau « Mode admin »)
+export const ADMIN_SESSION_SECONDS = 2 * 3600;
+
+/** Ouvre une session courte (2 h) sur le compte d'un artiste, pour l'équipe. */
+export async function startAdminSession(userId: string) {
+  const token = toHex(crypto.getRandomValues(new Uint8Array(32)));
+  await db()
+    .prepare("INSERT INTO sessions (token, user_id, expires_at) VALUES (?1, ?2, ?3)")
+    .bind(token, userId, new Date(Date.now() + ADMIN_SESSION_SECONDS * 1000).toISOString())
+    .run();
+  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${ADMIN_SESSION_SECONDS}`;
+}
+
 export async function endSession(token: string | undefined) {
   if (token) await db().prepare("DELETE FROM sessions WHERE token = ?1").bind(token).run();
   return `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;

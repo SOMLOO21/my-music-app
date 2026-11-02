@@ -27,6 +27,8 @@ export type User = {
   pixel_id: string | null;
   capi_token: string | null;
   test_event_code: string | null;
+  /** Compte ouvert par l'équipe depuis /admin (affiche le bandeau « Mode admin »). */
+  admin?: boolean;
 };
 
 export type Link = {
