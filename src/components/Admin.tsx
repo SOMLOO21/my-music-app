@@ -5,6 +5,7 @@ import * as api from "@/lib/api";
 import { FACETS, PLATFORM_LABEL, emptyTags, type FacetKey, type ResolvedLink, type Tags, type Taxonomy, type Video } from "@/lib/types";
 import { TagPicker } from "./Chips";
 import Thumb from "./Thumb";
+import { TEAM_KEY } from "./Feed";
 
 export default function Admin({
   initialVideos,
@@ -31,6 +32,13 @@ export default function Admin({
   const [suggesting, setSuggesting] = useState(false);
   const [suggestedBy, setSuggestedBy] = useState<Video["suggestedBy"] | null>(null);
   const editingDraft = videos.find((v) => v.id === editingId)?.status === "draft";
+
+  // Cet appareil a ouvert l'admin : on y affiche le bouton « + » dans le fil.
+  useEffect(() => {
+    try {
+      localStorage.setItem(TEAM_KEY, "1");
+    } catch {}
+  }, []);
 
   // Arrivée depuis « Configurer maintenant » (/admin?edit=<id>).
   useEffect(() => {
