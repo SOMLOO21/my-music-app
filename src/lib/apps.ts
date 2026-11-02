@@ -24,4 +24,12 @@ export const APPS: MusicApp[] = [
     emoji: "🔗",
     color: "#a78bfa",
   },
+  {
+    // Hébergée à part (serveur Python + ffmpeg sur le VPS), d'où l'adresse complète.
+    name: "Syncope",
+    description: "Monte des vidéos courtes sur ton son : clips par mood, hooks, paroles calées sur le beat.",
+    href: "https://syncope.mymusicapp.fr",
+    emoji: "🎬",
+    color: "#f472b6",
+  },
 ];

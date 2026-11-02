@@ -61,10 +61,21 @@ h1,.cell .name{font-family:var(--font-head)}
 .layout-list .foot{text-align:center}
 
 .foot{margin-top:40px;font-size:12px;color:var(--ink-soft)}
-.consent{position:fixed;left:16px;right:16px;bottom:16px;max-width:520px;margin:0 auto;padding:18px;background:#fff;color:#0f172a;border:1px solid #e5e7eb;border-radius:18px;box-shadow:0 20px 50px -20px rgba(15,23,42,.4);font-size:13px;display:none;z-index:10;font-family:Inter,sans-serif}
-.consent p{margin:0 0 12px;color:#334155}
-.consent .row{display:flex;gap:8px;justify-content:flex-end}
-.consent .btn{height:36px;font-size:13px}
+/* Consentement : grande fenêtre au centre, le fan choisit avant de continuer (pas de backdrop-filter : il grise la carte sur certains navigateurs).
+   Accepter et Refuser ont la même taille (règle CNIL : refuser doit être aussi simple qu'accepter). */
+.consent{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(8,8,12,.74);font-family:Inter,system-ui,sans-serif}
+.consent-card{width:100%;max-width:420px;background:#fff;color:#0f172a;border-radius:28px;padding:30px 24px 22px;text-align:center;box-shadow:0 30px 80px -20px rgba(0,0,0,.6);animation:pop .28s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes pop{from{transform:translateY(24px) scale(.96)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.consent-card{animation:none}}
+.consent-emoji{font-size:52px;line-height:1}
+.consent h2{font:800 21px/1.25 Inter,system-ui,sans-serif;margin:14px 0 10px;letter-spacing:-.02em;color:#0f172a}
+.consent p{margin:0 0 22px;font-size:16px;line-height:1.5;color:#334155}
+.consent .choices{display:grid;gap:10px}
+.consent button{height:56px;border-radius:16px;font:700 17px Inter,system-ui,sans-serif;cursor:pointer}
+.consent .yes{background:#0f172a;color:#fff;border:2px solid #0f172a}
+.consent .no{background:#fff;color:#0f172a;border:2px solid #cbd5e1}
+.consent .small{margin:14px 0 0;font-size:12px;color:#94a3b8}
+body.consent-open{overflow:hidden}
 @media (max-width:900px){
  .wrap{grid-template-columns:1fr;gap:28px;padding:28px 16px 120px}
  .side{position:static;text-align:center}
@@ -125,9 +136,17 @@ export function publicPage(link: Link, opts: PublicOpts) {
       <div class="foot">Créé avec ${opts.appName}</div>
     </section>
   </main>
-  ${opts.pixelId && !opts.preview ? h`<div class="consent" id="consent">
-    <p>On utilise des cookies (Meta) pour mesurer l'efficacité de la promotion de cette sortie. Tu peux refuser, le lien fonctionnera pareil.</p>
-    <div class="row"><button class="btn ghost" data-consent="denied">Refuser</button><button class="btn" data-consent="granted">Accepter</button></div>
+  ${opts.pixelId && !opts.preview ? h`<div class="consent" id="consent" role="dialog" aria-modal="true" aria-labelledby="consent-title">
+    <div class="consent-card">
+      <div class="consent-emoji" aria-hidden="true">🍪</div>
+      <h2 id="consent-title">Un petit coup de pouce ? 🙏</h2>
+      <p>On utilise des cookies pour mesurer l'efficacité de la promo de cette sortie. Tu peux refuser, le lien marchera pareil… mais si tu acceptes, ça aide énormément l'artiste à faire découvrir sa musique 🎶</p>
+      <div class="choices">
+        <button class="yes" data-consent="granted">Accepter 🎉</button>
+        <button class="no" data-consent="denied">Refuser</button>
+      </div>
+      <p class="small">Ton choix est gardé 6 mois. Cookies Meta (Facebook / Instagram).</p>
+    </div>
   </div>` : ''}
   <script>window.MML=${json({ slug: link.slug, pixel: opts.preview ? null : opts.pixelId, preview: Boolean(opts.preview) })};</script>
   <script>${raw(CLIENT_JS)}</script>`;
@@ -181,12 +200,12 @@ const CLIENT_JS = `
   if(M.pixel){
     var state = getC(COOKIE);
     if(state==='granted') loadPixel();
-    else if(!state && banner) banner.style.display='block';
+    else if(!state && banner){ banner.style.display='flex'; document.body.classList.add('consent-open'); }
   }
   document.querySelectorAll('[data-consent]').forEach(function(b){
     b.addEventListener('click', function(){
       setC(COOKIE, b.dataset.consent, 180);
-      banner.style.display='none';
+      banner.style.display='none'; document.body.classList.remove('consent-open');
       if(b.dataset.consent==='granted') loadPixel();
     });
   });
