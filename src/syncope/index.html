@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <base href="/syncope/">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SYNCOPE — Studio</title>
+  <meta name="description" content="Monte des vidéos verticales calées sur le beat de ton morceau, directement dans le navigateur.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;700;900&family=Archivo+Black&family=Bebas+Neue&family=Bungee&family=Permanent+Marker&family=Press+Start+2P&family=Rubik+Mono+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=24">
+</head>
+<body>
+  <header class="top">
+    <div class="logo">SYNCOPE<span>.</span></div>
+    <nav class="stepper" id="stepper" aria-label="Étapes"></nav>
+    <div class="top-meta" id="status">Dépose un son pour commencer</div>
+  </header>
+
+  <main class="layout">
+    <section class="panel">
+
+      <!-- 1. Son -->
+      <article class="card" id="card-audio" data-step="1" data-title="Son">
+        <h2><span class="num">01</span> Ton son</h2>
+        <div id="songsBox" class="songs hidden">
+          <div class="songs-head"><b>Mes sons</b><span class="hint" id="songsCount"></span></div>
+          <div class="songs-list" id="songsList"></div>
+        </div>
+        <label class="drop" id="drop">
+          <input type="file" id="audioInput" accept="audio/*,.mp3,.wav,.m4a,.aac,.flac,.ogg" hidden>
+          <strong>Glisse ton MP3, WAV ou M4A</strong>
+          <span>ou clique pour choisir un fichier</span>
+        </label>
+        <button class="ghost small" id="demoBtn">Essayer avec un son de démo</button>
+
+        <div id="audioBox" class="hidden">
+          <div class="track-row">
+            <div class="track-name">
+              <span id="trackName" title="Clique pour renommer"></span>
+              <button class="ghost small rename" id="renameBtn" title="Renommer ce son" aria-label="Renommer ce son">✎</button>
+              <span class="save-state" id="saveState"></span>
+            </div>
+            <div class="bpm"><span id="bpmVal">—</span><small>BPM</small></div>
+          </div>
+          <canvas id="wave" height="120" aria-label="Forme d'onde : clique pour placer le début de l'extrait"></canvas>
+          <p class="hint">Clique sur la forme d'onde pour placer le début de l'extrait. Les traits marquent les temps.</p>
+
+          <div class="row">
+            <label class="field">Durée de l'extrait
+              <select id="segDur">
+                <option value="10">10 s</option>
+                <option value="15" selected>15 s</option>
+                <option value="20">20 s</option>
+                <option value="30">30 s</option>
+                <option value="45">45 s</option>
+                <option value="60">60 s</option>
+              </select>
+            </label>
+            <button class="ghost" id="chorusBtn">Trouver le passage le plus fort</button>
+          </div>
+          <div class="seg-info" id="segInfo"></div>
+
+          <details class="adv">
+            <summary>Ajuster la grille</summary>
+            <div class="row">
+              <label class="field">BPM
+                <input type="number" id="bpmInput" min="40" max="240" step="0.01">
+              </label>
+              <button class="ghost small" id="halfBtn">÷ 2</button>
+              <button class="ghost small" id="dblBtn">× 2</button>
+            </div>
+            <div class="row">
+              <span class="field-label">Décalage</span>
+              <button class="ghost small" id="nudgeL">− 10 ms</button>
+              <span id="offsetVal" class="mono"></span>
+              <button class="ghost small" id="nudgeR">+ 10 ms</button>
+            </div>
+            <label class="check"><input type="checkbox" id="metro"> Clic métronome pendant l'écoute</label>
+          </details>
+        </div>
+      </article>
+
+      <!-- 2. Clips -->
+      <article class="card" id="card-clips" data-step="2" data-title="Clips">
+        <h2><span class="num">02</span> Tes clips</h2>
+        <div class="chosen-head">
+          <b>Tes plans</b><span class="hint" id="clipCount"></span>
+          <span class="grow"></span>
+          <button class="ghost small" id="shuffleBtn">Mélanger</button>
+        </div>
+        <div class="clips" id="clips"></div>
+        <p class="hint" id="clipsEmpty">Aucun plan pour l'instant : choisis-en dans la banque, importe un lien ou ajoute tes fichiers.</p>
+
+        <div class="tabs" id="clipTabs" role="tablist">
+          <button class="on" data-ct="bank" role="tab">Banque</button>
+          <button data-ct="link" role="tab">Lien</button>
+          <button data-ct="files" role="tab">Mes fichiers</button>
+        </div>
+
+        <div id="ctBank" class="ct">
+          <div id="bankOffline" class="setup hidden">
+            <p><b>La banque a besoin du serveur SYNCOPE.</b> Lance <code>python3 server.py</code> dans le dossier du projet, puis recharge la page.</p>
+          </div>
+          <div id="bankSetup" class="setup hidden">
+            <p><b>Active la banque de clips.</b> Elle utilise Pixabay : des milliers de vidéos gratuites, utilisables même dans un clip commercial.</p>
+            <ol>
+              <li>Connecte-toi (ou crée un compte gratuit) sur <a href="https://pixabay.com/accounts/register/" target="_blank" rel="noopener">pixabay.com</a>.</li>
+              <li>Ouvre <a href="https://pixabay.com/api/docs/" target="_blank" rel="noopener">pixabay.com/api/docs</a> : ta clé est écrite en vert dans la partie « Parameters », à la ligne « key ».</li>
+              <li>Copie-la, colle-la ici, puis clique sur « Activer ». Elle reste sur ton ordinateur.</li>
+            </ol>
+            <div class="row">
+              <input type="password" id="pexelsKey" class="grow-input" placeholder="Clé API Pixabay" autocomplete="off">
+              <button class="primary small" id="saveKey">Activer</button>
+            </div>
+            <p class="hint" id="keyStatus"></p>
+          </div>
+          <div id="bankUi" class="hidden">
+            <div class="moods" id="moods"></div>
+            <input type="search" id="bankSearch" class="grow-input" placeholder="Ou cherche un thème (Entrée) : neon, rain, car… en anglais, c'est plus large">
+            <div class="filters">
+              <div class="seg mini" id="fOri">
+                <button data-v="" class="on">Tous formats</button>
+                <button data-v="portrait">Vertical</button>
+                <button data-v="landscape">Horizontal</button>
+              </div>
+              <div class="seg mini" id="fDur">
+                <button data-v="" class="on">Toutes durées</button>
+                <button data-v="short">&lt; 8 s</button>
+                <button data-v="mid">8–15 s</button>
+                <button data-v="long">&gt; 15 s</button>
+              </div>
+            </div>
+            <div class="row">
+              <button class="primary small" id="pickForMe">Choisis pour moi</button>
+              <span class="hint" id="bankStatus"></span>
+            </div>
+            <div class="bank-grid" id="bankGrid"></div>
+            <button class="ghost small" id="bankMore">Voir plus</button>
+            <p class="hint">Survole une vignette pour la voir bouger, clique pour l'ajouter. Les vidéos horizontales sont recadrées en vertical. Vidéos fournies par <a id="bankCredit" href="https://pixabay.com" target="_blank" rel="noopener">Pixabay</a>.</p>
+          </div>
+        </div>
+
+        <div id="ctLink" class="ct hidden">
+          <input type="url" id="linkUrl" class="grow-input" placeholder="Colle un lien YouTube, TikTok, Instagram, Vimeo…">
+          <label class="check"><input type="checkbox" id="linkRights"> Cette vidéo est à moi, ou son auteur m'a autorisé à l'utiliser.</label>
+          <button class="primary" id="linkImport">Importer la vidéo</button>
+          <div class="progress hidden" id="linkProgress"><div id="linkBar"></div></div>
+          <p class="hint" id="linkStatus"></p>
+          <p class="hint">YouTube, TikTok, Instagram, Vimeo, X et la plupart des sites vidéo. 15 minutes maximum ; les vidéos privées ne peuvent pas être récupérées.</p>
+        </div>
+
+        <div id="ctFiles" class="ct hidden">
+          <label class="drop slim">
+            <input type="file" id="clipInput" accept="video/*,image/*" multiple hidden>
+            <strong>Ajoute des vidéos ou des photos</strong>
+            <span>Depuis ton ordinateur ou ton téléphone</span>
+          </label>
+        </div>
+
+        <div class="row">
+          <label class="field">Une coupe tous les
+            <select id="cutEvery">
+              <option value="0.5">demi-temps</option>
+              <option value="1" selected>temps</option>
+              <option value="2">2 temps</option>
+              <option value="4">mesure (4 temps)</option>
+            </select>
+          </label>
+        </div>
+      </article>
+
+      <!-- 3. Hook d'ouverture -->
+      <article class="card" id="card-hook" data-step="3" data-title="Hook">
+        <h2><span class="num">03</span> Hook d'ouverture</h2>
+        <p class="hint">Un plan choc de 2-3 secondes juste avant ton son, pour accrocher dès la première seconde. Facultatif.</p>
+
+        <div id="hookChosen" class="hook-chosen hidden">
+          <video id="hookVid" muted playsinline loop autoplay></video>
+          <div class="hook-info">
+            <div><b id="hookName"></b> <span class="hint" id="hookMeta"></span></div>
+            <label class="field">Son pendant le hook
+              <select id="hookSound">
+                <option value="hook" selected>Le son du hook, puis ta musique</option>
+                <option value="music">Ta musique dès le début</option>
+              </select>
+            </label>
+            <label class="field">Durée
+              <select id="hookLen">
+                <option value="0" selected>Tout le hook</option>
+                <option value="1.5">1,5 s</option>
+                <option value="2">2 s</option>
+                <option value="3">3 s</option>
+              </select>
+            </label>
+            <input type="text" id="hookText" class="grow-input" maxlength="80" placeholder="Texte sur le hook (facultatif) : « attends la fin… »">
+            <div class="row">
+              <button class="primary small" id="hookPlay">▶ Voir l'ouverture</button>
+              <button class="ghost small" id="hookRemove">Retirer le hook</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabs" id="hookTabs" role="tablist">
+          <button class="on" data-ht="bank" role="tab">Banque de hooks</button>
+          <button data-ht="top" role="tab">Les plus utilisés</button>
+          <button data-ht="mine" role="tab">Mon hook</button>
+        </div>
+
+        <div id="htBank" class="ct">
+          <p class="hint hidden" id="hookOffline">La banque de hooks a besoin du serveur SYNCOPE : lance <code>python3 server.py</code>.</p>
+          <div class="seg mini cats" id="hookCats"></div>
+          <input type="search" id="hookSearch" class="grow-input" placeholder="Chercher un hook (noms en anglais) : flop, smash, fall…">
+          <div class="bank-grid" id="hookGrid"></div>
+          <button class="ghost small" id="hookMore">Voir plus</button>
+          <p class="hint">Survole un hook pour le voir bouger, clique pour l'utiliser en ouverture.</p>
+        </div>
+
+        <div id="htTop" class="ct hidden">
+          <div id="hookTop" class="keys"></div>
+          <p class="hint">Classement selon l'usage : aperçus, hooks choisis et vidéos exportées. En ligne, il regroupera tous les artistes.</p>
+        </div>
+
+        <div id="htMine" class="ct hidden">
+          <label class="drop slim">
+            <input type="file" id="hookFile" accept="video/*" hidden>
+            <strong>Ajoute ton propre hook</strong>
+            <span>Une vidéo courte, idéalement verticale</span>
+          </label>
+        </div>
+      </article>
+
+      <!-- 4. Paroles -->
+      <article class="card" id="card-lyrics" data-step="4" data-title="Paroles">
+        <h2><span class="num">04</span> Paroles</h2>
+        <div class="row">
+          <label class="field">Langue
+            <select id="asrLang">
+              <option value="french" selected>Français</option>
+              <option value="english">Anglais</option>
+              <option value="auto">Auto</option>
+            </select>
+          </label>
+          <label class="field">Précision
+            <select id="asrModel">
+              <option value="base" selected>Standard (~200 Mo)</option>
+              <option value="small">Précise (~600 Mo)</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="choice2" id="lyricsChoice">
+          <button id="detectBtn"><b>Détecter les paroles</b><span>Chaque mot s'écrit au moment où tu le chantes.</span></button>
+          <button id="pasteBtn"><b>J'ai mes paroles</b><span>Colle ton texte : il se cale sur ta voix, orthographe intacte.</span></button>
+        </div>
+
+        <div id="pasteZone" class="paste hidden">
+          <textarea id="lyrics" rows="6" placeholder="Colle tes paroles ici, une ligne par phrase…"></textarea>
+          <button class="primary" id="applyPaste">Caler mes paroles sur ma voix</button>
+          <div class="row">
+            <label class="field">Sans IA
+              <select id="density">
+                <option value="0.5">1 mot / 2 temps</option>
+                <option value="1" selected>1 mot / temps</option>
+                <option value="2">2 mots / temps</option>
+              </select>
+            </label>
+            <button class="ghost small" id="autoLyrics">Répartir sur le beat</button>
+            <button class="ghost small" id="cancelPaste">Annuler</button>
+          </div>
+        </div>
+
+        <div id="asrBox" class="asr hidden">
+          <div class="steps-asr"><span id="ds1">1. Écoute de la voix…</span><span id="ds2">2. Calage mot par mot…</span></div>
+          <div class="progress"><div id="asrBar"></div></div>
+          <p class="hint" id="asrStatus"></p>
+        </div>
+
+        <div id="editor" class="hidden">
+          <div class="tabs" role="tablist">
+            <button class="on" data-tab="text" role="tab">Texte</button>
+            <button data-tab="keys" role="tab">Mots clés <span id="keysCount"></span></button>
+          </div>
+
+          <div id="tabText">
+            <p class="tip">Clique sur un mot, ici ou directement dans la vidéo, pour le faire ressortir ou le corriger.</p>
+            <div class="lyr-list" id="lyricsList"></div>
+            <p class="hint" id="outHint"></p>
+            <details class="adv" id="tlDetails">
+              <summary>Ajuster le timing des mots</summary>
+            <div class="tl">
+              <div class="tl-bar">
+                <b class="tl-title">Timing des paroles</b>
+                <button class="small ghost" id="undoBtn" title="Annuler (Ctrl+Z)">↶</button>
+                <button class="small ghost" id="redoBtn" title="Rétablir (Ctrl+Maj+Z)">↷</button>
+                <span id="selBar" class="selbar hidden">
+                  <span class="hint" id="selCount"></span>
+                  <button class="small ghost" id="copyBtn">⧉ Copier</button>
+                  <button class="small ghost" id="delBtn">Supprimer</button>
+                </span>
+                <button class="small ghost hidden" id="pasteWordsBtn">Coller au curseur</button>
+                <span class="grow"></span>
+                <button class="small ghost" id="zoomOut" title="Dézoomer">−</button>
+                <button class="small ghost" id="zoomIn" title="Zoomer">+</button>
+                <button class="small ghost" id="zoomFit">Adapter</button>
+                <button class="small" id="tlClose">Fermer</button>
+              </div>
+              <div class="tl-scroll" id="tlScroll">
+                <div class="tl-inner" id="tlInner">
+                  <div class="tl-ruler" id="tlRuler" title="Clique ou glisse pour placer la lecture"></div>
+                  <canvas class="tl-wave" id="tlWave"></canvas>
+                  <div class="tl-words" id="tlWords" title="Double-clique pour ajouter un mot à cet instant"></div>
+                  <div class="tl-head" id="tlHead"></div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <label class="field">Mots par ligne
+                <select id="perLine">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3" selected>3</option>
+                  <option value="4">4</option>
+                  <option value="6">6</option>
+                </select>
+              </label>
+              <button class="ghost small" id="retimeBtn">Recaler les paroles</button>
+              <button class="ghost small" id="tapLyrics">Tap paroles</button>
+              <button class="ghost small" id="resetLyrics">Repartir de zéro</button>
+            </div>
+              <p class="hint">Glisse un mot pour le déplacer, tire ses bords pour changer sa durée, double-clique dans le vide pour ajouter un mot. Maj-clic pour sélectionner plusieurs mots d'un coup.</p>
+            </details>
+          </div>
+
+          <div id="tabKeys" class="hidden">
+            <div id="keysList" class="keys"></div>
+            <p class="hint" id="keysEmpty">Aucun mot clé pour l'instant. Clique sur un mot dans l'onglet Texte ou dans la vidéo, puis choisis un effet.</p>
+          </div>
+        </div>
+
+        <div id="tapBox" class="tapbox hidden">
+          <p>Tape à chaque mot chanté (barre d'espace ou bouton). Mot suivant : <strong id="nextWord"></strong></p>
+          <button class="tap" id="tapBtn">TAP</button>
+          <label class="check"><input type="checkbox" id="snapTap"> Aimanter au demi-temps le plus proche</label>
+        </div>
+        <p class="hint">La détection tourne dans ton navigateur : ton son ne quitte pas ton appareil. Le modèle se télécharge une fois, puis reste en cache.</p>
+      </article>
+
+      <!-- 4. Style -->
+      <article class="card" id="card-style" data-step="5" data-title="Style">
+        <h2><span class="num">05</span> Style</h2>
+        <div class="presets" id="presets">
+          <button data-preset="clean">Clean</button>
+          <button data-preset="club">Club</button>
+          <button data-preset="vhs">VHS</button>
+          <button data-preset="rage">Rage</button>
+        </div>
+        <div class="seg" id="lyricStyle" role="radiogroup" aria-label="Style des paroles">
+          <button data-v="karaoke" class="on">Karaoké</button>
+          <button data-v="box">Boîte</button>
+          <button data-v="fill">Remplissage</button>
+          <button data-v="pop">Mot seul</button>
+        </div>
+        <div class="row">
+          <label class="field">Police
+            <select id="font">
+              <option>Anton</option>
+              <option>Archivo Black</option>
+              <option>Bebas Neue</option>
+              <option>Bungee</option>
+              <option>Rubik Mono One</option>
+              <option>Permanent Marker</option>
+              <option>Press Start 2P</option>
+              <option>Archivo</option>
+            </select>
+          </label>
+          <label class="field">Position
+            <select id="pos">
+              <option value="top">Haut</option>
+              <option value="mid" selected>Centre</option>
+              <option value="low">Bas</option>
+            </select>
+          </label>
+        </div>
+        <div class="row">
+          <label class="field grow">Taille <input type="range" id="size" min="50" max="180" value="104"></label>
+          <label class="field">Texte <input type="color" id="textColor" value="#ffffff"></label>
+          <label class="field">Accent <input type="color" id="accent" value="#c6ff3d"></label>
+          <label class="field">Mots clés <input type="color" id="emphColor" value="#ff4d6d"></label>
+        </div>
+        <label class="check"><input type="checkbox" id="upper" checked> Majuscules</label>
+        <h3>Effets</h3>
+        <div class="fx" id="fx">
+          <label><input type="checkbox" data-fx="zoom" checked> Zoom sur le temps</label>
+          <label><input type="checkbox" data-fx="shake" checked> Secousse sur la coupe</label>
+          <label><input type="checkbox" data-fx="flash"> Flash</label>
+          <label><input type="checkbox" data-fx="sat"> Saturation</label>
+          <label><input type="checkbox" data-fx="glow"> Glow</label>
+          <label><input type="checkbox" data-fx="vhs"> VHS</label>
+          <label><input type="checkbox" data-fx="grain"> Grain</label>
+          <label><input type="checkbox" data-fx="vignette" checked> Vignette</label>
+        </div>
+      </article>
+
+      <!-- 5. Export -->
+      <article class="card" id="card-export" data-step="6" data-title="Export">
+        <h2><span class="num">06</span> Export</h2>
+        <button class="primary" id="exportBtn" disabled>Exporter la vidéo 1080 × 1920</button>
+        <div class="progress hidden" id="progress"><div id="progressBar"></div></div>
+        <p class="hint" id="exportHint">L'export se fait en temps réel : un extrait de 15 s prend 15 s.</p>
+        <div id="result"></div>
+      </article>
+    </section>
+
+    <section class="stage">
+      <div class="phone">
+        <canvas id="view" width="1080" height="1920"></canvas>
+      </div>
+      <div class="transport">
+        <button class="restart" id="restartBtn" disabled title="Recommencer depuis le début (touche R)" aria-label="Recommencer depuis le début">⟲</button>
+        <button class="play" id="playBtn" disabled aria-label="Lire l'extrait">▶</button>
+        <div class="time mono" id="time">0:00.0</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Timeline des paroles en grand, en bas de l'écran (s'ouvre avec « Ajuster le timing des mots ») -->
+  <section class="dock" id="tlDock" aria-label="Timeline des paroles"></section>
+
+  <div id="wordPop" class="pop hidden" role="dialog" aria-label="Modifier le mot">
+    <div class="pop-head">
+      <span class="pop-grip" id="popGrip" title="Glisse pour déplacer la fenêtre (double-clic : remettre à sa place)" aria-label="Déplacer la fenêtre">⋮⋮</span>
+      <input id="popText" aria-label="Texte du mot">
+      <span id="popTime" class="mono"></span>
+      <button class="ghost small" id="popClose" aria-label="Fermer">✕</button>
+    </div>
+    <p class="pop-label">Faire ressortir</p>
+    <div class="pop-fx">
+      <button data-emph="big"><span class="fx-demo d-big">Aa</span>Gros</button>
+      <button data-emph="color"><span class="fx-demo d-color">Aa</span>Couleur</button>
+      <button data-emph="glow"><span class="fx-demo d-glow">Aa</span>Néon</button>
+      <button data-emph="shake"><span class="fx-demo d-shake">Aa</span>Secousse</button>
+      <button data-emph="pop"><span class="fx-demo d-pop">Aa</span>Rebond</button>
+      <button data-emph="solo"><span class="fx-demo d-solo">Aa</span>Plein écran</button>
+    </div>
+    <div class="pop-foot">
+      <button class="ghost small" id="popListen">▶ Écouter ce passage</button>
+      <button class="ghost small" id="popDelete">Supprimer le mot</button>
+    </div>
+  </div>
+
+  <script src="beat.js?v=24"></script>
+  <script src="demo.js?v=24"></script>
+  <script src="lyrics.js?v=24"></script>
+  <script src="app.js?v=24"></script>
+</body>
+</html>
