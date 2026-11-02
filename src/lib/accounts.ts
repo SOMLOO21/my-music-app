@@ -50,8 +50,8 @@ export function validateSignup(input: { firstName?: string; lastName?: string; p
   const pseudo = String(input.pseudo ?? "").trim().replace(/^@/, "");
   const password = String(input.password ?? "");
   if (!firstName || !lastName) return { error: "Indique ton prénom et ton nom." } as const;
-  if (!/^[a-zA-Z0-9._-]{3,30}$/.test(pseudo)) {
-    return { error: "Le pseudo doit faire 3 à 30 caractères : lettres, chiffres, point, tiret ou _." } as const;
+  if (!/^[a-zA-Z0-9._@+-]{3,60}$/.test(pseudo)) {
+    return { error: "Le pseudo (ou l'e-mail) doit faire au moins 3 caractères, sans espace ni accent." } as const;
   }
   if (password.length < 6) return { error: "Le mot de passe doit faire au moins 6 caractères." } as const;
   return { firstName, lastName, pseudo, password } as const;
@@ -64,7 +64,7 @@ type UserRow = { id: string; pseudo: string; first_name: string; last_name: stri
 const toPublic = (u: UserRow): PublicUser => ({ id: u.id, pseudo: u.pseudo, firstName: u.first_name, lastName: u.last_name });
 
 export async function createUser(data: { firstName: string; lastName: string; pseudo: string; password: string }) {
-  const exists = await db().prepare("SELECT 1 FROM users WHERE pseudo = ?1").bind(data.pseudo).first();
+  const exists = await db().prepare("SELECT 1 FROM users WHERE pseudo = ?1 COLLATE NOCASE").bind(data.pseudo).first();
   if (exists) return { error: "Ce pseudo est déjà pris." } as const;
 
   const salt = toHex(crypto.getRandomValues(new Uint8Array(16)));
@@ -84,7 +84,7 @@ export async function createUser(data: { firstName: string; lastName: string; ps
 }
 
 export async function checkLogin(pseudo: string, password: string): Promise<PublicUser | null> {
-  const user = await db().prepare("SELECT * FROM users WHERE pseudo = ?1").bind(pseudo.trim().replace(/^@/, "")).first<UserRow>();
+  const user = await db().prepare("SELECT * FROM users WHERE pseudo = ?1 COLLATE NOCASE").bind(pseudo.trim().replace(/^@/, "")).first<UserRow>();
   if (!user) return null;
   return sameHex(await hashPassword(password, user.salt), user.password_hash) ? toPublic(user) : null;
 }

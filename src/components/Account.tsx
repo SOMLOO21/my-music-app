@@ -55,6 +55,7 @@ function AuthForms() {
   const [form, setForm] = useState({ firstName: "", lastName: "", pseudo: "", password: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
@@ -114,7 +115,7 @@ function AuthForms() {
         )}
         <input
           className={input}
-          placeholder="Pseudo (ex. nom d'artiste)"
+          placeholder="Pseudo ou e-mail"
           autoComplete="username"
           autoCapitalize="none"
           autoCorrect="off"
@@ -122,15 +123,27 @@ function AuthForms() {
           onChange={set("pseudo")}
           required
         />
-        <input
-          className={input}
-          type="password"
-          placeholder={mode === "signup" ? "Mot de passe (6 caractères minimum)" : "Mot de passe"}
-          autoComplete={mode === "signup" ? "new-password" : "current-password"}
-          value={form.password}
-          onChange={set("password")}
-          required
-        />
+        <div className="relative">
+          <input
+            className={`${input} pr-24`}
+            type={showPassword ? "text" : "password"}
+            placeholder={mode === "signup" ? "Mot de passe (6 caractères minimum)" : "Mot de passe"}
+            autoComplete={mode === "signup" ? "new-password" : "current-password"}
+            autoCapitalize="none"
+            autoCorrect="off"
+            value={form.password}
+            onChange={set("password")}
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute inset-y-0 right-3 my-auto h-8 rounded-full px-3 text-sm text-white/70 hover:text-white"
+            aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+          >
+            {showPassword ? "Masquer" : "Afficher"}
+          </button>
+        </div>
         {error && <p className="text-sm text-red-400">{error}</p>}
         <button disabled={busy} className="w-full rounded-full bg-accent py-3 font-semibold text-black disabled:opacity-50">
           {busy ? "…" : mode === "signup" ? "Créer mon compte" : "Me connecter"}
