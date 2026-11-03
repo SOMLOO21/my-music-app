@@ -1,11 +1,11 @@
 // Réservé à l'équipe (protégé par le mot de passe du site) : ouvre le compte d'un artiste
-// pour l'aider sur My Music Link. Session limitée à 2 h ; « Revenir à l'admin » rétablit la session d'origine.
+// pour l'aider sur My Music Link ou Booking. Session limitée à 2 h ; « Revenir à l'admin » rétablit la session d'origine.
 import { cookies } from "next/headers";
 import { ADMIN_AS_COOKIE, ADMIN_RETURN_COOKIE, ADMIN_SESSION_SECONDS, SESSION_COOKIE, startAdminSession } from "@/lib/accounts";
 import { sql } from "@/lib/sql";
 
 export async function POST(req: Request) {
-  const { userId } = (await req.json().catch(() => ({}))) as { userId?: string };
+  const { userId, app } = (await req.json().catch(() => ({}))) as { userId?: string; app?: string };
   const user = userId
     ? await sql.prepare("SELECT id, pseudo FROM users WHERE id = ?1").bind(userId).first<{ id: string; pseudo: string }>()
     : null;
@@ -21,5 +21,5 @@ export async function POST(req: Request) {
   headers.append("Set-Cookie", `${ADMIN_RETURN_COOKIE}=${previous || "-"}; ${opts}`);
   headers.append("Set-Cookie", `${ADMIN_AS_COOKIE}=${encodeURIComponent(user.pseudo)}; ${opts}`);
   console.log(`[admin] ouverture du compte @${user.pseudo}`);
-  return new Response(JSON.stringify({ ok: true, redirect: "/link" }), { headers });
+  return new Response(JSON.stringify({ ok: true, redirect: app === "booking" ? "/booking" : "/link" }), { headers });
 }

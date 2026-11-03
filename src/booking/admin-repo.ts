@@ -18,7 +18,8 @@ import type {
   VenueInput,
   VenueStatus,
 } from "./types";
-import { MASTER_STATUSES, STATUS_LABELS } from "./types";
+import { MASTER_STATUSES } from "./types";
+export { getBookingTaxonomy } from "./taxonomy";
 
 const db = () => sql;
 const now = () => new Date().toISOString();
@@ -382,18 +383,6 @@ export async function artistActivity() {
 }
 
 // --- Réglages : listes et modèles Mymusicads --------------------------------
-
-export async function getBookingTaxonomy(): Promise<BookingTaxonomy> {
-  const { results } = await db().prepare("SELECT facet, vals FROM bk_taxonomy").all<{ facet: BookingFacet; vals: string }>();
-  const taxonomy: BookingTaxonomy = { venue_type: [], genre: [], usual_format: [], deal_type: [], channel: [], status: { ...STATUS_LABELS } };
-  for (const row of results) {
-    if (!(row.facet in taxonomy)) continue;
-    const vals = parseJson<unknown>(row.vals, null);
-    if (row.facet === "status") Object.assign(taxonomy.status, vals ?? {});
-    else if (Array.isArray(vals)) (taxonomy as unknown as Record<string, unknown>)[row.facet] = vals;
-  }
-  return taxonomy;
-}
 
 export async function setTaxonomyFacet<F extends BookingFacet>(facet: F, vals: BookingTaxonomy[F]) {
   await db()

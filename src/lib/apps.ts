@@ -31,4 +31,11 @@ export const APPS: MusicApp[] = [
     emoji: "🎬",
     color: "#f472b6",
   },
+  {
+    name: "Booking",
+    description: "Trouve les lieux qui collent à ta musique, prépare tes mails de démarchage et suis tes relances.",
+    href: "/booking",
+    emoji: "🎤",
+    color: "#fb923c",
+  },
 ];

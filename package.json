@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.mjs",
-    "test:booking": "node --experimental-transform-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/booking-test-hooks.mjs --test scripts/test-booking-isolation.mjs"
+    "test:booking": "node --experimental-transform-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/booking-test-hooks.mjs --test scripts/test-booking-isolation.mjs",
+    "seed:booking": "node --env-file-if-exists=.env.local --experimental-transform-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/booking-test-hooks.mjs scripts/seed-booking-demo.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.134.0",

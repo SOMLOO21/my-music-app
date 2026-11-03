@@ -43,13 +43,14 @@ export default function Artists() {
     setMessage(res.ok ? `Mot de passe de @${a.pseudo} réinitialisé : transmets-le-lui.` : (data.error ?? "Erreur."));
   }
 
-  // Ouvre le compte de l'artiste (session de 2 h) puis son espace My Music Link
-  async function openAccount(a: Artist) {
-    if (!confirm(`Ouvrir le compte de @${a.pseudo} ? Tu verras et pourras modifier ses smart links. « Revenir à l'admin » te ramène à ton compte.`)) return;
+  // Ouvre le compte de l'artiste (session de 2 h) puis son espace My Music Link ou Booking
+  async function openAccount(a: Artist, app: "link" | "booking") {
+    const what = app === "link" ? "ses smart links" : "ses contacts et démarches booking";
+    if (!confirm(`Ouvrir le compte de @${a.pseudo} ? Tu verras et pourras modifier ${what}. « Revenir à l'admin » te ramène à ton compte.`)) return;
     const res = await fetch("/api/users/impersonate", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ userId: a.id }),
+      body: JSON.stringify({ userId: a.id, app }),
     });
     const data = (await res.json().catch(() => ({}))) as { redirect?: string; error?: string };
     if (res.ok && data.redirect) window.location.href = data.redirect;
@@ -77,8 +78,11 @@ export default function Artists() {
                 {a.links ? `${a.links} smart link(s) · ${a.views} vue(s) · ${a.clicks} clic(s)` : "aucun smart link"}
               </p>
             </div>
-            <button onClick={() => openAccount(a)} className="rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-black">
+            <button onClick={() => openAccount(a, "link")} className="rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-black">
               Ouvrir son My Music Link
+            </button>
+            <button onClick={() => openAccount(a, "booking")} className="rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-black">
+              Ouvrir son Booking
             </button>
             <button onClick={() => reset(a)} className="rounded-full border border-white/20 px-3 py-1.5 text-xs">
               Nouveau mot de passe

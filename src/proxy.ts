@@ -1,6 +1,7 @@
 // Protection du site en ligne :
 // - le fil (/) est public ;
-// - l'admin, la page de partage et l'API demandent le mot de passe (SITE_PASSWORD, identifiant libre) ;
+// - l'admin (dont /admin/booking), la page de partage et l'API demandent le mot de passe (SITE_PASSWORD, identifiant libre) ;
+// - /api/account, /api/favorites et /api/booking sont publics : chaque route vérifie elle-même la session ;
 // - /api/inbox accepte aussi la clé secrète du Raccourci iPhone (?key=INBOX_KEY).
 // En local (`npm run dev`) sans SITE_PASSWORD, tout reste ouvert.
 // (Next.js 16 : ce fichier remplace l'ancien middleware.ts.)
@@ -9,7 +10,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // Seules ces zones demandent le mot de passe ; tout le reste (fil, icônes…) est public.
 const PROTECTED = ["/admin", "/partager", "/api"];
 // API des comptes artistes : publique (chaque route vérifie elle-même la session).
-const PUBLIC_API = ["/api/account", "/api/favorites"];
+const PUBLIC_API = ["/api/account", "/api/favorites", "/api/booking"];
 
 const under = (pathname: string, prefixes: string[]) =>
   prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));

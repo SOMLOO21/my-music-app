@@ -9,9 +9,18 @@ type User = { pseudo: string; firstName: string; lastName: string };
 const input =
   "w-full rounded-xl border border-white/20 bg-black/40 px-4 py-3 text-base outline-none focus:border-accent";
 
-export default function Account({ user, favoriteCount }: { user: User | null; favoriteCount: number }) {
+export default function Account({
+  user,
+  favoriteCount,
+  returnTo = "/",
+}: {
+  user: User | null;
+  favoriteCount: number;
+  /** Page ouverte après connexion (ex. /booking). */
+  returnTo?: string;
+}) {
   if (user) return <Profile user={user} favoriteCount={favoriteCount} />;
-  return <AuthForms />;
+  return <AuthForms returnTo={returnTo} />;
 }
 
 function Profile({ user, favoriteCount }: { user: User; favoriteCount: number }) {
@@ -50,7 +59,7 @@ function Profile({ user, favoriteCount }: { user: User; favoriteCount: number })
   );
 }
 
-function AuthForms() {
+function AuthForms({ returnTo }: { returnTo: string }) {
   const [mode, setMode] = useState<"signup" | "login">("signup");
   const [form, setForm] = useState({ firstName: "", lastName: "", pseudo: "", password: "" });
   const [error, setError] = useState("");
@@ -79,8 +88,7 @@ function AuthForms() {
     }
     clearLocalFavorites();
     // Rechargement complet : les pages serveur relisent le cookie de session.
-    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-    window.location.href = "/";
+    window.location.href = returnTo;
   }
 
   const tab = (value: typeof mode, label: string) => (

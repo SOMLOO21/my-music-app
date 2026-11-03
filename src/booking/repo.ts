@@ -35,6 +35,8 @@ const clean = (v: unknown) => {
 const sqlList = (values: readonly string[]) => values.map((v) => `'${v}'`).join(", ");
 
 type Row = Record<string, unknown>;
+/** Ne garde que les champs fournis : une modification partielle n'efface pas les autres. */
+const defined = <T extends object>(o: T) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as Partial<T>;
 const parseJson = <T>(v: unknown, fallback: T): T => {
   try {
     return typeof v === "string" ? (JSON.parse(v) as T) : fallback;
@@ -155,7 +157,7 @@ export async function updatePrivateVenue(userId: string, venueId: string, input:
     .bind(venueId, userId)
     .first<Row>();
   if (!current) return null;
-  const merged = { ...toVenue(current), ...input };
+  const merged = { ...toVenue(current), ...defined(input) };
   const name = clean(merged.name) ?? (current.name as string);
   const v = venueValues(merged);
   await db()
@@ -258,7 +260,7 @@ export async function findContactByEmail(userId: string, email: string) {
 export async function updateContact(userId: string, contactId: string, input: ContactInput): Promise<ContactResult | null> {
   const current = await getContact(userId, contactId);
   if (!current) return null;
-  const c = contactValues({ ...current, ...input });
+  const c = contactValues({ ...current, ...defined(input) });
   const venueId = input.venue_id === undefined ? current.venue_id : clean(input.venue_id);
   if (venueId && venueId !== current.venue_id && !(await getVenue(userId, venueId))) return { error: "venue" };
   if (c.email_normalized && c.email_normalized !== current.email_normalized) {
@@ -294,7 +296,7 @@ export async function getProfile(userId: string) {
 
 export async function saveProfile(userId: string, input: ProfileInput): Promise<Profile> {
   const current = await getProfile(userId);
-  const p = { ...current, ...input };
+  const p = { ...current, ...defined(input) };
   const days = Math.round(Number(p.followup_days ?? 10));
   await db()
     .prepare(
@@ -350,7 +352,7 @@ export async function duplicateTemplate(userId: string, templateId: string): Pro
 export async function updateTemplate(userId: string, templateId: string, input: TemplateInput): Promise<Template | null> {
   const row = await db().prepare("SELECT * FROM bk_templates WHERE id = ?2 AND user_id = ?1").bind(userId, templateId).first<Row>();
   if (!row) return null;
-  const t = { ...toTemplate(row), ...input };
+  const t = { ...toTemplate(row), ...defined(input) };
   await db()
     .prepare("UPDATE bk_templates SET name = ?3, usage = ?4, venue_types = ?5, subject = ?6, body = ?7, updated_at = ?8 WHERE id = ?2 AND user_id = ?1")
     .bind(userId, templateId, clean(t.name) ?? "Sans titre", t.usage, JSON.stringify(t.venue_types ?? []), String(t.subject ?? ""), String(t.body ?? ""), now())
@@ -397,7 +399,7 @@ export async function createCampaign(userId: string, input: CampaignInput): Prom
 export async function updateCampaign(userId: string, campaignId: string, input: CampaignInput): Promise<Campaign | null> {
   const current = await getCampaign(userId, campaignId);
   if (!current) return null;
-  const c = { ...current, ...input };
+  const c = { ...current, ...defined(input) };
   await db()
     .prepare("UPDATE bk_campaigns SET name = ?3, target_period = ?4, notes = ?5, updated_at = ?6 WHERE id = ?2 AND user_id = ?1")
     .bind(userId, campaignId, clean(c.name) ?? current.name, clean(c.target_period), clean(c.notes), now())
@@ -507,7 +509,7 @@ export async function addVenuesToCampaign(userId: string, campaignId: string, ve
 export async function updateOutreach(userId: string, outreachId: string, input: OutreachInput): Promise<Outreach | null> {
   const current = await getOutreach(userId, outreachId);
   if (!current || !(await checkRefs(userId, input))) return null;
-  const o = { ...current, ...input };
+  const o = { ...current, ...defined(input) };
   const status = isOutreachStatus(o.status) ? o.status : current.status;
   const at = now();
   const firstContact = clean(o.first_contact_at) ?? (status !== "to_contact" ? at : null);
@@ -596,4 +598,15 @@ export async function listImports(userId: string) {
 
 export async function getImport(userId: string, importId: string) {
   return db().prepare("SELECT * FROM bk_imports WHERE id = ?2 AND user_id = ?1").bind(userId, importId).first<Import>();
+}
+
+// --- Smart links (app Link) ---------------------------------------------------
+
+/** Smart links My Music Link de l'artiste, proposés dans le profil booking. */
+export async function listSmartLinks(userId: string) {
+  const { results } = await db()
+    .prepare("SELECT slug, title, artist FROM ml_links WHERE user_id = ?1 ORDER BY created_at DESC")
+    .bind(userId)
+    .all<{ slug: string; title: string; artist: string }>();
+  return results;
 }
