@@ -610,3 +610,84 @@ export async function listSmartLinks(userId: string) {
     .all<{ slug: string; title: string; artist: string }>();
   return results;
 }
+
+// --- Import de fichier ---------------------------------------------------------
+
+/** Ce qu'il faut savoir pour rapprocher un import : lieux visibles, contacts et démarches déjà présents. */
+export async function getImportContext(userId: string) {
+  const [venues, contacts, outreach] = await Promise.all([
+    db()
+      .prepare(`SELECT v.* FROM bk_venues v WHERE ${VISIBLE} ORDER BY v.owner_user_id IS NOT NULL`)
+      .bind(userId)
+      .all<Row>(),
+    db()
+      .prepare("SELECT venue_id, first_name, last_name, email_normalized, phone, instagram FROM bk_contacts WHERE user_id = ?1")
+      .bind(userId)
+      .all<Pick<Contact, "venue_id" | "first_name" | "last_name" | "email_normalized" | "phone" | "instagram">>(),
+    db()
+      .prepare("SELECT DISTINCT venue_id FROM bk_outreach WHERE user_id = ?1 AND campaign_id IS NULL")
+      .bind(userId)
+      .all<{ venue_id: string }>(),
+  ]);
+  return { venues: venues.results.map(toVenue), contacts: contacts.results, outreachVenueIds: new Set(outreach.results.map((o) => o.venue_id)) };
+}
+
+export interface ImportPlanData {
+  importRow: Omit<Import, "user_id" | "created_at">;
+  venues: Record<string, unknown>[];
+  contacts: Record<string, unknown>[];
+  outreach: Record<string, unknown>[];
+}
+
+/**
+ * Requêtes d'enregistrement d'un import (à passer à sql.batch avec la copie dans la base maître).
+ * userId est lié en paramètre : les lignes JSON ne choisissent jamais le propriétaire.
+ */
+export function importStatements(userId: string, plan: ImportPlanData) {
+  const at = now();
+  const i = plan.importRow;
+  const j = (f: string) => `j.value ->> '${f}'`;
+  const statements = [
+    db()
+      .prepare(
+        `INSERT INTO bk_imports (id, user_id, filename, sheet, rows_total, rows_imported, rows_duplicates, rows_invalid,
+           venues_matched, venues_created, outreach_created, mapping, targets, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, NULL, ?13)`,
+      )
+      .bind(i.id, userId, i.filename, i.sheet, i.rows_total, i.rows_imported, i.rows_duplicates, i.rows_invalid, i.venues_matched, i.venues_created, i.outreach_created, i.mapping, at),
+  ];
+  const venueCols = ["id", "name", "slug", "match_key", "type", "genres", "city", "department", "region", "capacity", "website", "instagram", "booking_period", "usual_format", "public_notes"];
+  if (plan.venues.length) {
+    statements.push(
+      db()
+        .prepare(
+          `INSERT INTO bk_venues (${venueCols.join(", ")}, owner_user_id, status, created_at, updated_at)
+           SELECT ${venueCols.map(j).join(", ")}, ?2, 'published', ?3, ?3 FROM json_each(?1) j`,
+        )
+        .bind(JSON.stringify(plan.venues), userId, at),
+    );
+  }
+  const contactCols = ["id", "venue_id", "first_name", "last_name", "role", "email", "email_normalized", "email_valid", "phone", "instagram", "notes"];
+  if (plan.contacts.length) {
+    statements.push(
+      db()
+        .prepare(
+          `INSERT OR IGNORE INTO bk_contacts (${contactCols.join(", ")}, user_id, import_id, created_at, updated_at)
+           SELECT ${contactCols.map(j).join(", ")}, ?2, ?3, ?4, ?4 FROM json_each(?1) j`,
+        )
+        .bind(JSON.stringify(plan.contacts), userId, i.id, at),
+    );
+  }
+  const outreachCols = ["id", "venue_id", "contact_id", "status", "channel", "first_contact_at", "last_action_at", "proposed_dates", "deal_type", "fee_cents"];
+  if (plan.outreach.length) {
+    statements.push(
+      db()
+        .prepare(
+          `INSERT INTO bk_outreach (${outreachCols.join(", ")}, user_id, import_id, created_at, updated_at)
+           SELECT ${outreachCols.map(j).join(", ")}, ?2, ?3, ?4, ?4 FROM json_each(?1) j`,
+        )
+        .bind(JSON.stringify(plan.outreach), userId, i.id, at),
+    );
+  }
+  return statements;
+}

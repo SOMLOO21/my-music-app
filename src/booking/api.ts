@@ -1,4 +1,6 @@
 // Booking : appels aux routes /api/booking depuis le navigateur.
+import type { ImportReport } from "./importer";
+import type { Mapping } from "./import/fields";
 import type { Contact, Profile, Venue } from "./types";
 
 async function call<T>(url: string, init?: RequestInit): Promise<T> {
@@ -24,3 +26,7 @@ export const deleteVenue = (id: string) => call<{ ok: true }>(`/api/booking/venu
 export const createContact = (c: ContactPayload) => call<Contact>("/api/booking/contacts", json("POST", c));
 export const updateContact = (id: string, c: ContactPayload) => call<Contact>(`/api/booking/contacts/${id}`, json("PATCH", c));
 export const deleteContact = (id: string) => call<{ ok: true }>(`/api/booking/contacts/${id}`, { method: "DELETE" });
+
+export type ImportBody = { filename: string; sheet: string | null; headers: string[]; mapping: Mapping; rows: string[][]; lines: number[] };
+export const previewImport = (b: ImportBody) => call<ImportReport>("/api/booking/import/preview", json("POST", b));
+export const commitImport = (b: ImportBody) => call<{ importId: string; report: ImportReport }>("/api/booking/import", json("POST", b));

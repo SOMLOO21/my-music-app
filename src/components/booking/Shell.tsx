@@ -5,6 +5,7 @@ const NAV = [
   { key: "accueil", label: "Accueil", href: "/booking" },
   { key: "annuaire", label: "Annuaire", href: "/booking/annuaire" },
   { key: "contacts", label: "Mes contacts", href: "/booking/contacts" },
+  { key: "import", label: "Importer", href: "/booking/import" },
   { key: "profil", label: "Mon profil", href: "/booking/profil" },
 ] as const;
 

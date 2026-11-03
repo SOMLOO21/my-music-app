@@ -16,6 +16,7 @@ execFileSync(process.execPath, ["scripts/migrate.mjs"], { env: process.env, stdi
 const { sql } = await import("../src/lib/sql.ts");
 const repo = await import("../src/booking/repo.ts");
 const admin = await import("../src/booking/admin-repo.ts");
+const importer = await import("../src/booking/importer.ts");
 
 const OLD = "2026-01-01T10:00:00.000Z"; // dernière action ancienne : relance due
 const TODAY = "2026-11-02";
@@ -276,6 +277,80 @@ describe("Base maître", () => {
     assert.equal(shared.owner_user_id, null);
     assert.equal(shared.status, "draft");
     assert.equal((await sql.prepare("SELECT COUNT(*) AS n FROM bk_contacts WHERE venue_id = ?1").bind(shared.id).first()).n, 0);
+  });
+});
+
+
+describe("Import de fichier", () => {
+  const headers = ["Lieu", "Ville", "Mail prog", "Statut", "Date 1er contact", "Notes"];
+  const mapping = { Lieu: "venue_name", Ville: "city", "Mail prog": "email", Statut: "status", "Date 1er contact": "first_contact_at", Notes: "notes" };
+  const file = (rows) => ({ filename: "suivi.csv", sheet: null, headers, mapping, rows, lines: rows.map((_, i) => i + 2) });
+  const rowsA = [
+    ["La Salle Démo", "Rennes", "prog@salle-demo-import.fr", "Contacté", "15/10/2026", ""],
+    ["Bar Import A", "Nantes", "prog@bar-commun.fr", "Contacté", "15/10/2026", "jam le jeudi"],
+    ["", "", "", "", "", "ligne sans rien"],
+    ["Bar Mail Cassé", "Nantes", "prog@@casse", "", "", ""],
+  ];
+  let importA;
+
+  test("aperçu : lieux reconnus, nouveaux lieux privés, lignes invalides, rien d'enregistré", async () => {
+    const report = await importer.previewImport(A, importer.readPayload(file(rowsA)));
+    assert.equal(report.venuesMatched, 1);
+    assert.equal(report.venuesCreated, 2);
+    assert.equal(report.contactsNew, 3);
+    assert.equal(report.outreachNew, 1);
+    assert.deepEqual(report.invalid.map((x) => x.line), [4]);
+    assert.deepEqual(report.invalidEmails.map((x) => x.value), ["prog@@casse"]);
+    assert.equal((await repo.listImports(A)).length, 1);
+  });
+  test("validation : contacts, lieux privés, démarche et historique créés chez A", async () => {
+    importA = await importer.commitImport({ id: A, pseudo: "artiste_a" }, importer.readPayload(file(rowsA)));
+    const contacts = await repo.listContacts(A);
+    assert.ok(contacts.some((c) => c.email_normalized === "prog@bar-commun.fr" && c.import_id === importA.importId && /jam le jeudi/.test(c.notes)));
+    // Une seule démarche par lieu hors campagne : A en avait déjà une sur La Salle Démo
+    assert.ok(!(await repo.listOutreach(A)).some((x) => x.venue_id === SHARED.id && x.import_id === importA.importId));
+    const o = (await repo.listOutreach(A)).find((x) => x.venue_name === "Bar Import A" && x.import_id === importA.importId);
+    assert.equal(o.status, "contacted");
+    assert.equal(o.first_contact_at, "2026-10-15");
+    assert.ok((await repo.listVenues(A, { privateOnly: true })).some((v) => v.name === "Bar Import A"));
+    assert.equal((await repo.getImport(A, importA.importId)).rows_imported, 3);
+  });
+  test("réimporter le même fichier ne crée aucun doublon", async () => {
+    const again = await importer.commitImport({ id: A, pseudo: "artiste_a" }, importer.readPayload(file(rowsA)));
+    assert.equal(again.report.contactsNew, 0);
+    assert.equal(again.report.duplicates, 3);
+    assert.equal(again.report.venuesCreated, 0);
+    assert.equal(again.report.outreachNew, 0);
+  });
+  test("l'import de A n'apparaît jamais chez B", async () => {
+    assert.ok(!(await repo.listImports(B)).some((i) => i.id === importA.importId));
+    assert.equal(await repo.getImport(B, importA.importId), null);
+    assert.ok(!(await repo.listVenues(B, { limit: 200 })).some((v) => v.name === "Bar Import A"));
+    assert.ok(!(await repo.listContacts(B)).some((c) => c.import_id === importA.importId));
+    assert.ok(!(await repo.listOutreach(B)).some((o) => o.import_id === importA.importId));
+    // B a le même lieu en tête : il devient un lieu privé de B, distinct de celui de A
+    const reportB = await importer.previewImport(B, importer.readPayload(file([["Bar Import A", "Nantes", "", "", "", ""]])));
+    assert.equal(reportB.venuesCreated, 1);
+  });
+  test("la base maître reçoit les contacts de A et de B avec leurs sources", async () => {
+    const importB = await importer.commitImport(
+      { id: B, pseudo: "artiste_b" },
+      importer.readPayload(file([["Bar Import B", "Nantes", "PROG@bar-commun.fr", "", "", ""]])),
+    );
+    const { contacts } = await admin.listMasterContacts({ q: "bar-commun" });
+    assert.equal(contacts.length, 1);
+    const sources = await admin.getMasterSources(contacts[0].id);
+    assert.deepEqual(sources.map((s) => [s.user_label, s.import_id]).sort(), [["artiste_a", importA.importId], ["artiste_b", importB.importId]].sort());
+  });
+  test("un contact retiré n'est pas réactivé par un import", async () => {
+    await importer.commitImport({ id: B, pseudo: "artiste_b" }, importer.readPayload(file([["Salle X", "Brest", "booking@salle-demo.fr", "", "", ""]])));
+    const removed = (await admin.listMasterContacts({ status: "removed" })).contacts;
+    assert.equal(removed.length, 1);
+    assert.equal(removed[0].email, null);
+  });
+  test("limite de 5 000 lignes, avec un message clair", () => {
+    const rows = Array.from({ length: 5001 }, () => ["L", "V", "", "", "", ""]);
+    assert.throws(() => importer.readPayload(file(rows)), /5000 par import/);
   });
 });
 

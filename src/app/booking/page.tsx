@@ -72,9 +72,14 @@ export default async function BookingHome() {
             Tes contacts restent privés{privateVenues.length ? ` · ${privateVenues.length} lieu(x) ajouté(s) par toi` : ""}.
           </p>
         </Link>
-        <div className={`${card} border-dashed text-white/40 sm:col-span-2`}>
+        <Link href="/booking/import" className={`${card} hover:border-white/30`}>
+          <p className="text-2xl">📥</p>
+          <p className="mt-2 font-semibold">Importer mon fichier</p>
+          <p className="text-sm text-white/60">Ton tableau Excel ou CSV de lieux et de suivi, repris en 2 minutes.</p>
+        </Link>
+        <div className={`${card} border-dashed text-white/40`}>
           <p className="font-semibold">Bientôt</p>
-          <p className="text-sm">Import de ton fichier de suivi, campagnes, mails prêts à envoyer et pipeline.</p>
+          <p className="text-sm">Campagnes, mails prêts à envoyer et pipeline.</p>
         </div>
       </div>
     </Shell>
