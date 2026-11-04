@@ -206,7 +206,7 @@ export default function Kanban({
             <Column key={s} status={s} hiddenOnMobile={s !== mobileCol} count={columns[s].length}>
               <SortableContext items={columns[s].map((t) => t.id)} strategy={verticalListSortingStrategy}>
                 {columns[s].length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-white/10 p-4 text-center text-xs text-white/40">
+                  <p className="rounded-xl border border-dashed border-white/10 p-4 text-center text-xs text-white/50">
                     {canEdit ? "Dépose une carte ici" : "Aucune étape"}
                   </p>
                 ) : (
@@ -223,7 +223,7 @@ export default function Kanban({
           {active ? <Card task={active} today={today} trackTitle={active.track_id ? trackTitles[active.track_id] : null} lifted /> : null}
         </DragOverlay>
       </DndContext>
-      {canEdit && <p className="mt-4 text-center text-xs text-white/40 md:hidden">Appui long sur une carte pour la déplacer.</p>}
+      {canEdit && <p className="mt-4 text-center text-xs text-white/50 md:hidden">Appui long sur une carte pour la déplacer.</p>}
     </div>
   );
 }

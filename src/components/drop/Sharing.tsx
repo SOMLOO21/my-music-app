@@ -86,7 +86,7 @@ export default function Sharing({ releaseId }: { releaseId: string }) {
           Toute personne qui a le lien voit la feuille de route et le calendrier, sans se connecter. Tes notes et tes liens de fichiers restent privés.
         </p>
         {!loaded ? (
-          <p className="text-sm text-white/40">Chargement…</p>
+          <p className="text-sm text-white/50">Chargement…</p>
         ) : url ? (
           <>
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -174,7 +174,7 @@ export default function Sharing({ releaseId }: { releaseId: string }) {
             Inviter
           </button>
         </form>
-        <p className="text-xs text-white/40">
+        <p className="text-xs text-white/50">
           Lecteur : {ROLE_HELP.viewer}. Éditeur : {ROLE_HELP.editor} (utile pour un manager). Supprimer la sortie, changer sa date et gérer
           le partage restent réservés au propriétaire.
         </p>

@@ -146,7 +146,7 @@ export default function Settings({
               );
             })}
           </div>
-          <p className="mt-1 text-xs text-white/40">Les statuts déjà en place ne changent pas : seules les nouvelles tâches en tiennent compte.</p>
+          <p className="mt-1 text-xs text-white/50">Les statuts déjà en place ne changent pas : seules les nouvelles tâches en tiennent compte.</p>
         </fieldset>
 
         <button

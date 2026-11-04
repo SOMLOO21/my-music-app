@@ -242,7 +242,7 @@ export default function Calendar({
                 <DayCell key={day} day={day} today={today} marks={marks.get(day)} className="rounded-2xl border border-white/10 p-2" long>
                   <div className="mt-1 space-y-1.5">
                     {(byDay.get(day) ?? []).length === 0 ? (
-                      <p className="px-1 text-xs text-white/30">—</p>
+                      <p className="px-1 text-xs text-white/50">—</p>
                     ) : (
                       (byDay.get(day) ?? []).map((t) => chip(t))
                     )}
@@ -250,7 +250,7 @@ export default function Calendar({
                 </DayCell>
               ))}
             </div>
-            {canEdit && <p className="mt-3 text-center text-xs text-white/40">Appui long sur une tâche pour la glisser sur un autre jour.</p>}
+            {canEdit && <p className="mt-3 text-center text-xs text-white/50">Appui long sur une tâche pour la glisser sur un autre jour.</p>}
           </>
         ) : (
           <div className="space-y-4">
@@ -385,7 +385,7 @@ function ChipBody({ task, today, compact = false, lifted = false }: { task: Task
         {STATUS_ICON[task.status]}
       </span>
       <span
-        className={`min-w-0 flex-1 leading-snug ${compact ? "truncate text-[11px]" : "text-sm"} ${done ? "text-white/40 line-through" : ""} ${
+        className={`min-w-0 flex-1 leading-snug ${compact ? "truncate text-[11px]" : "text-sm"} ${done ? "text-white/50 line-through" : ""} ${
           late ? "text-red-200" : ""
         }`}
       >

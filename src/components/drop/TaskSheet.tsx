@@ -128,7 +128,7 @@ export default function TaskSheet({
                   value={task.due_date}
                   onChange={(e) => e.target.value && patch({ dueDate: e.target.value })}
                 />
-                <span className="mt-1 block text-xs text-white/40">
+                <span className="mt-1 block text-xs text-white/50">
                   Une date choisie à la main ne bouge plus si la date de sortie change (sauf si tu le demandes).
                 </span>
               </label>
@@ -168,7 +168,7 @@ export default function TaskSheet({
                         onChange={() => patch({ checklist: task.checklist.map((x, j) => (j === i ? { ...x, done: !x.done } : x)) })}
                         className="mt-0.5 size-5 shrink-0 accent-[var(--accent)]"
                       />
-                      <span className={c.done ? "text-white/40 line-through" : "text-white/80"}>{c.label}</span>
+                      <span className={c.done ? "text-white/50 line-through" : "text-white/80"}>{c.label}</span>
                     </label>
                   </li>
                 ))}

@@ -154,7 +154,7 @@ export default function AdminTable({ rows, today }: { rows: AdminReleaseRow[]; t
                   </td>
                   <td className="px-3 py-2">{TYPE_LABELS[r.type as keyof typeof TYPE_LABELS] ?? r.type}</td>
                   <td className="whitespace-nowrap px-3 py-2">
-                    {frShortDate(r.release_date)} <span className="text-white/40">{countdownLabel(r.release_date, today)}</span>
+                    {frShortDate(r.release_date)} <span className="text-white/50">{countdownLabel(r.release_date, today)}</span>
                   </td>
                   <td className="px-3 py-2">{MODE_LABELS[r.mode as keyof typeof MODE_LABELS] ?? r.mode}</td>
                   <td className="px-3 py-2">
@@ -165,7 +165,7 @@ export default function AdminTable({ rows, today }: { rows: AdminReleaseRow[]; t
                       <span className="text-white/70">{pct} %</span>
                     </div>
                   </td>
-                  <td className={`px-3 py-2 ${r.late ? "font-semibold text-red-300" : "text-white/40"}`}>{r.late}</td>
+                  <td className={`px-3 py-2 ${r.late ? "font-semibold text-red-300" : "text-white/50"}`}>{r.late}</td>
                   <td className="whitespace-nowrap px-3 py-2 text-white/60">{activity(r.updated_at)}</td>
                 </tr>
               );

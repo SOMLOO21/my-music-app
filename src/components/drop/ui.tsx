@@ -74,7 +74,7 @@ export function TaskRow({
         className={`mt-1 size-2.5 shrink-0 rounded-full ${late ? "bg-red-400" : done ? "bg-accent" : "border border-white/40"}`}
       />
       <span className="min-w-0 flex-1">
-        <span className={`block text-sm font-medium leading-snug ${done ? "text-white/40 line-through" : ""}`}>{task.title}</span>
+        <span className={`block text-sm font-medium leading-snug ${done ? "text-white/50 line-through" : ""}`}>{task.title}</span>
         <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-white/50">
           {showDate && (
             <span className={late ? "font-semibold text-red-300" : ""}>
