@@ -9,7 +9,8 @@
     "lint": "eslint",
     "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.mjs",
     "test:booking": "node --experimental-transform-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/booking-test-hooks.mjs --test scripts/test-booking-isolation.mjs scripts/test-booking-import.mjs",
-    "seed:booking": "node --env-file-if-exists=.env.local --experimental-transform-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/booking-test-hooks.mjs scripts/seed-booking-demo.mjs"
+    "seed:booking": "node --env-file-if-exists=.env.local --experimental-transform-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/booking-test-hooks.mjs scripts/seed-booking-demo.mjs",
+    "test:drop": "node --experimental-transform-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/booking-test-hooks.mjs --test \"scripts/test-drop-*.mjs\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.134.0",
@@ -22,7 +23,8 @@
     "next": "^16.4.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "read-excel-file": "^9.3.14"
+    "read-excel-file": "^9.3.14",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
