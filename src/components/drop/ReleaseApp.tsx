@@ -2,9 +2,11 @@
 // Drop : page d'une sortie. En-tête commun, onglets, filtre par titre (EP/Album) et fiche tâche.
 // Les tâches vivent dans un seul état : une modification dans une vue apparaît dans les autres.
 import { useCallback, useMemo, useState } from "react";
-import { reorder } from "@/drop/api";
+import { patchTask, reorder } from "@/drop/api";
+import { diffDays } from "@/drop/engine/dates";
 import { MODE_LABELS, TYPE_LABELS, countdownLabel, frShortDate } from "@/drop/labels";
 import type { ReleaseView, Task } from "@/drop/types";
+import Calendar from "./Calendar";
 import Kanban, { type MoveItem } from "./Kanban";
 import Roadmap from "./Roadmap";
 import TaskSheet from "./TaskSheet";
@@ -52,6 +54,16 @@ export default function ReleaseApp({ view, today, initialTab }: { view: ReleaseV
             : t,
         ),
       () => reorder(release.id, items),
+    );
+  };
+
+  /** Calendrier : nouvelle date, verrouillée (le recalage n'y touchera plus). */
+  const changeDate = (task: Task, dueDate: string) => {
+    if (task.due_date === dueDate) return;
+    const offset = task.offset_days === null ? null : task.offset_days + diffDays(task.due_date, dueDate);
+    optimistic(
+      (list) => list.map((t) => (t.id === task.id ? { ...t, due_date: dueDate, date_locked: true, offset_days: offset } : t)),
+      () => patchTask(task.id, { dueDate }),
     );
   };
   const [tab, setTab] = useState<ReleaseTab>(initialTab);
@@ -151,7 +163,18 @@ export default function ReleaseApp({ view, today, initialTab }: { view: ReleaseV
         {tab === "kanban" && (
           <Kanban tasks={visible} today={today} trackTitles={trackTitles} canEdit={canEdit} onOpen={(t) => setOpenId(t.id)} onMove={move} />
         )}
-        {(tab === "calendrier" || tab === "parametres") && (
+        {tab === "calendrier" && (
+          <Calendar
+            tasks={visible}
+            tracks={tracks}
+            today={today}
+            releaseDate={release.release_date}
+            canEdit={canEdit}
+            onOpen={(t) => setOpenId(t.id)}
+            onChangeDate={changeDate}
+          />
+        )}
+        {tab === "parametres" && (
           <p className="rounded-2xl border border-dashed border-white/15 p-6 text-center text-sm text-white/50">
             Cette vue arrive bientôt.
           </p>
