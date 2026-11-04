@@ -107,8 +107,13 @@ export const taskTemplateSchema = z
     readyIf: id.nullable(),
     /** Que faire si la tâche ne tient plus dans le délai (sinon : réglage par défaut de modes.ts). */
     ifTooLate: ifTooLate.optional(),
-    /** EP/Album : une tâche par titre, espacées de perTrackSpacingDays. */
-    perTrack: z.boolean().optional(),
+    /** Alerte affichée si la tâche est placée aujourd'hui faute de temps (sinon : message générique). */
+    lateAlert: text.optional(),
+    /**
+     * EP/Album : une tâche par titre, espacées de perTrackSpacingDays.
+     * "all" = tous les titres ; "unreleased" = seulement ceux qui ne sortent pas en single avant.
+     */
+    perTrack: z.enum(["all", "unreleased"]).optional(),
     /** Module clip : remplace cette tâche du single quand le clip sort le même jour. */
     replaces: id.optional(),
   })

@@ -1,6 +1,7 @@
 // Drop : modèle EP/Album (J0 = date de sortie de l'EP). Un album utilise le même modèle en V1.
 // Ces tâches s'ajoutent aux plannings des singles extraits (chacun reçoit le modèle Single).
-// « perTrack » : la tâche est dupliquée pour chaque titre, espacée de perTrackSpacingDays (modes.ts).
+// « perTrack » : la tâche est dupliquée pour chaque titre (« all ») ou chaque titre inédit (« unreleased »),
+// espacée de perTrackSpacingDays (modes.ts) : les copies d'avant-sortie finissent au J idéal, celles d'après y commencent.
 // Mêmes champs que templates/single.ts.
 import type { Template } from "../schema";
 
@@ -42,6 +43,7 @@ export const EP: Template = {
         "Vérifie que le projet apparaît dans Spotify for Artists",
       ],
       readyIf: null,
+      lateAlert: "Vérifie avec ton distributeur que l'EP peut être livré à temps.",
     },
     {
       id: "ep_spotify_pitch",
@@ -104,7 +106,7 @@ export const EP: Template = {
       why: "Faire entendre les inédits donne envie d'écouter le projet en entier le jour J.",
       how: ["Choisis le meilleur passage du titre", "Fais une vidéo hook de 7 à 15 s", "Ajoute le nom du titre à l'écran"],
       readyIf: null,
-      perTrack: true,
+      perTrack: "unreleased",
     },
     {
       id: "ep_preview_listening",
@@ -146,7 +148,7 @@ export const EP: Template = {
       why: "Expliquer chaque titre fait vivre le projet plusieurs semaines. Chaque vidéo remet un titre en avant.",
       how: ["Raconte l'histoire du titre en 30 s", "Mets un extrait en fond", "Termine par le lien du projet"],
       readyIf: null,
-      perTrack: true,
+      perTrack: "all",
     },
     {
       id: "ep_fan_poll",

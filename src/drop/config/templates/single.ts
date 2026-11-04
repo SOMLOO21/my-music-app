@@ -47,6 +47,7 @@ export const SINGLE: Template = {
         "Vérifie que le titre apparaît bien dans Spotify for Artists",
       ],
       readyIf: null,
+      lateAlert: "Vérifie avec ton distributeur que la sortie peut être livrée à temps.",
     },
     {
       id: "single_sacem",

@@ -63,7 +63,7 @@ describe("Configuration Drop", () => {
     test("modes dans le désordre", () => expectError((c) => (c.settings.modes[1].minDays = 50), /plus grand/));
     test("phases avec un trou", () => expectError((c) => (c.phases[1].from = -20), /sans trou/));
     test("tâche Réseaux sans format", () => expectError((c) => (c.templates.single.tasks[7].formats = []), /au moins un format/));
-    test("perTrack hors EP", () => expectError((c) => (c.templates.single.tasks[0].perTrack = true), /perTrack/));
+    test("perTrack hors EP", () => expectError((c) => (c.templates.single.tasks[0].perTrack = "all"), /perTrack/));
     test("replaces vers une tâche inconnue", () => expectError((c) => (c.templates.clip.tasks[7].replaces = "nope"), /replaces/));
     test("texte vide", () => expectError((c) => (c.templates.single.tasks[0].why = "  "), /templates\/single\.ts/));
   });
