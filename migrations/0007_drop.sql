@@ -15,6 +15,7 @@ CREATE TABLE drop_releases (
   clip_is_relaunch INTEGER NOT NULL DEFAULT 0,
   platforms TEXT NOT NULL DEFAULT '[]',      -- ["tiktok","instagram","youtube"]
   owned_assets TEXT NOT NULL DEFAULT '[]',   -- ids de src/drop/config/assets.ts
+  asset_quantities TEXT NOT NULL DEFAULT '{}', -- quantités facultatives : {"press_photos": 10}
   admin_enabled INTEGER NOT NULL DEFAULT 1,
   mode TEXT NOT NULL,                        -- confort | standard | express | urgence
   warnings TEXT NOT NULL DEFAULT '[]',       -- avertissements du moteur

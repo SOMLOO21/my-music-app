@@ -48,6 +48,7 @@ export const toRelease = (r: Row): Release =>
     admin_enabled: bool(r.admin_enabled),
     platforms: parseJson(r.platforms, []),
     owned_assets: parseJson(r.owned_assets, []),
+    asset_quantities: parseJson(r.asset_quantities, {}),
     warnings: parseJson(r.warnings, []),
     dismissed_keys: parseJson(r.dismissed_keys, []),
   }) as unknown as Release;
@@ -208,6 +209,7 @@ export async function createRelease(userId: string, input: ReleaseCreate, today 
     clip_is_relaunch: input.type === "clip" && input.clipIsRelaunch,
     platforms: input.platforms,
     owned_assets: input.ownedAssets,
+    asset_quantities: input.assetQuantities,
     admin_enabled: input.adminEnabled,
     mode: "standard",
     warnings: [],
@@ -224,8 +226,8 @@ export async function createRelease(userId: string, input: ReleaseCreate, today 
     db()
       .prepare(
         `INSERT INTO drop_releases (id, owner_id, type, title, artist_name, release_date, clip_is_relaunch, platforms, owned_assets,
-           admin_enabled, mode, warnings, dismissed_keys, config_version, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, '[]', ?13, ?14, ?14)`,
+           asset_quantities, admin_enabled, mode, warnings, dismissed_keys, config_version, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?15, ?10, ?11, ?12, '[]', ?13, ?14, ?14)`,
       )
       .bind(
         id,
@@ -242,6 +244,7 @@ export async function createRelease(userId: string, input: ReleaseCreate, today 
         JSON.stringify(release.warnings),
         CONFIG_VERSION,
         at,
+        JSON.stringify(release.asset_quantities),
       ),
     ...tracks.map((t) =>
       db()
@@ -332,6 +335,7 @@ export async function duplicateRelease(userId: string, releaseId: string, today 
       clipIsRelaunch: r.clip_is_relaunch,
       platforms: r.platforms,
       ownedAssets: r.owned_assets,
+      assetQuantities: r.asset_quantities,
       adminEnabled: r.admin_enabled,
       tracks: view.tracks.map((t) => ({
         title: t.title,
@@ -354,6 +358,7 @@ function applyChanges(release: Release, tracks: Track[], change: SettingsChange)
     release_date: change.releaseDate ?? release.release_date,
     platforms: change.platforms ?? release.platforms,
     owned_assets: change.ownedAssets ?? release.owned_assets,
+    asset_quantities: change.assetQuantities ?? release.asset_quantities,
     admin_enabled: change.adminEnabled ?? release.admin_enabled,
   };
   // EP/album : les singles et clips suivent le décalage de la date du projet.
@@ -408,7 +413,7 @@ export async function applySettings(userId: string, releaseId: string, change: S
     db()
       .prepare(
         `UPDATE drop_releases SET release_date = ?2, platforms = ?3, owned_assets = ?4, admin_enabled = ?5, mode = ?6,
-           warnings = ?7, config_version = ?8, updated_at = ?9 WHERE id = ?1`,
+           warnings = ?7, config_version = ?8, updated_at = ?9, asset_quantities = ?10 WHERE id = ?1`,
       )
       .bind(
         releaseId,
@@ -420,6 +425,7 @@ export async function applySettings(userId: string, releaseId: string, change: S
         JSON.stringify(plan.warnings),
         CONFIG_VERSION,
         at,
+        JSON.stringify(p.next.asset_quantities),
       ),
     ...p.nextTracks.map((t) =>
       db()

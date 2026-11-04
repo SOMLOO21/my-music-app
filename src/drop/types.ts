@@ -15,6 +15,7 @@ export interface Release {
   clip_is_relaunch: boolean;
   platforms: PlatformId[];
   owned_assets: string[];
+  asset_quantities: Record<string, number>;
   admin_enabled: boolean;
   mode: ModeId;
   warnings: PlanWarning[];

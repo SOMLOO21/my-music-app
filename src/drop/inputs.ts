@@ -43,6 +43,11 @@ export const releaseCreateSchema = z
     clipIsRelaunch: z.boolean().default(false),
     platforms,
     ownedAssets: ownedAssets.default([]),
+    /** Quantités facultatives par contenu (ex. 10 photos presse). */
+    assetQuantities: z
+      .record(z.string(), z.number().int().min(1).max(999))
+      .default({})
+      .refine((q) => Object.keys(q).every((k) => assetIds.has(k)), "contenu inconnu"),
     adminEnabled: z.boolean().default(true),
     tracks: z.array(trackInputSchema).max(maxTracks).default([]),
   })
@@ -83,6 +88,7 @@ export const settingsChangeSchema = z.object({
   releaseDate: isoDate.optional(),
   platforms: platforms.optional(),
   ownedAssets: ownedAssets.optional(),
+  assetQuantities: z.record(z.string(), z.number().int().min(1).max(999)).optional(),
   adminEnabled: z.boolean().optional(),
   includeLocked: z.boolean().default(false),
 });
