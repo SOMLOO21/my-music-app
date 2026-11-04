@@ -21,6 +21,7 @@ import Kanban, { type MoveItem } from "./Kanban";
 import NewTaskForm from "./NewTaskForm";
 import Roadmap from "./Roadmap";
 import Settings from "./Settings";
+import Sharing from "./Sharing";
 import { secondary } from "./styles";
 import TaskSheet from "./TaskSheet";
 
@@ -266,6 +267,7 @@ export default function ReleaseApp({ view, today, initialTab }: { view: ReleaseV
             release={release}
             today={today}
             isOwner={view.role === "owner"}
+            sharing={view.role === "owner" ? <Sharing releaseId={release.id} /> : undefined}
             onApplied={async (summary) => {
               const fresh = await getReleaseView(release.id);
               setRelease(fresh.release);

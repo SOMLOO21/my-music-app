@@ -1,6 +1,6 @@
 // Drop : appels aux routes /api/drop depuis le navigateur.
 import type { StatusId } from "./config/schema";
-import type { ReleaseView, Task } from "./types";
+import type { Member, MemberRole, ReleaseView, ShareLink, Task } from "./types";
 
 async function call<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, { ...init, headers: { "content-type": "application/json", ...init?.headers } });
@@ -63,3 +63,15 @@ export const duplicateRelease = (releaseId: string) =>
   call<{ id: string }>(`/api/drop/releases/${releaseId}/duplicate`, { method: "POST" });
 export const deleteRelease = (releaseId: string) => call<{ ok: true }>(`/api/drop/releases/${releaseId}`, { method: "DELETE" });
 export const getReleaseView = (releaseId: string) => call<ReleaseView>(`/api/drop/releases/${releaseId}`);
+
+// --- Partage ---
+export const getShareLink = (releaseId: string) => call<{ link: ShareLink | null }>(`/api/drop/releases/${releaseId}/share`);
+export const createShareLink = (releaseId: string) => call<{ link: ShareLink }>(`/api/drop/releases/${releaseId}/share`, { method: "POST" });
+export const disableShareLink = (releaseId: string) => call<{ link: null }>(`/api/drop/releases/${releaseId}/share`, { method: "DELETE" });
+export const listMembers = (releaseId: string) => call<{ members: Member[] }>(`/api/drop/releases/${releaseId}/members`);
+export const inviteMember = (releaseId: string, pseudo: string, role: MemberRole) =>
+  call<{ members: Member[] }>(`/api/drop/releases/${releaseId}/members`, json("POST", { pseudo, role }));
+export const setMemberRole = (releaseId: string, userId: string, role: MemberRole) =>
+  call<{ members: Member[] }>(`/api/drop/releases/${releaseId}/members/${userId}`, json("PATCH", { role }));
+export const removeMember = (releaseId: string, userId: string) =>
+  call<{ members: Member[] }>(`/api/drop/releases/${releaseId}/members/${userId}`, { method: "DELETE" });
