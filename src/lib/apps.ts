@@ -31,4 +31,11 @@ export const APPS: MusicApp[] = [
     emoji: "🎬",
     color: "#f472b6",
   },
+  {
+    name: "Drop",
+    description: "Ton planning de sortie étape par étape : quoi faire et quand, avec une idée de contenu pour chaque étape.",
+    href: "/drop",
+    emoji: "🚀",
+    color: "#38bdf8",
+  },
 ];

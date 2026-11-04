@@ -48,5 +48,8 @@ next-env.d.ts
 .dev.vars*
 !.dev.vars.example
 
-# Base de test locale (Turso / SQLite)
+# Bases de test locales (Turso / SQLite)
 local.db*
+test.db*
+test-drop.db*
+drop-dev.db*

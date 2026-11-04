@@ -32,6 +32,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             {t.label}
           </Link>
         ))}
+        <Link
+          href="/admin/drop"
+          className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white/70 transition hover:border-white/40 hover:text-white"
+        >
+          Drop
+        </Link>
       </nav>
       {tab === "videos" ? <Admin initialVideos={videos} initialTaxonomy={taxonomy!} initialEditId={edit} /> : <Artists />}
     </>
