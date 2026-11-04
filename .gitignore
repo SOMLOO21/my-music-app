@@ -51,3 +51,4 @@ next-env.d.ts
 # Bases de test locales (Turso / SQLite)
 local.db*
 test.db*
+test-drop.db*
