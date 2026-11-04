@@ -258,3 +258,18 @@ describe("Validation des entrées", () => {
     assert.equal(inviteSchema.parse({ pseudo: "@manager" }).pseudo, "manager");
   });
 });
+
+describe("Kanban", () => {
+  test("réordonner : éditeur oui, lecteur non, tâche d'une autre sortie refusée", async () => {
+    const view = await repo.getRelease(OWNER, release.id);
+    const [a, b] = view.tasks;
+    assert.equal(await repo.reorderTasks(EDITOR, release.id, [{ id: a.id, status: "publie", position: 0 }, { id: b.id, status: "pret", position: 1 }]), true);
+    const after = await repo.getRelease(OWNER, release.id);
+    assert.equal(after.tasks.find((t) => t.id === a.id).status, "publie");
+    assert.ok(after.tasks.find((t) => t.id === a.id).completed_at);
+    assert.equal(await repo.reorderTasks(STRANGER, release.id, [{ id: a.id, status: "a_produire", position: 0 }]), false);
+    const foreign = (await repo.getRelease(STRANGER, other.id)).tasks[0];
+    assert.equal(await repo.reorderTasks(OWNER, release.id, [{ id: foreign.id, status: "publie", position: 0 }]), false);
+    assert.equal((await repo.getRelease(STRANGER, other.id)).tasks[0].status, foreign.status);
+  });
+});

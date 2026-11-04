@@ -93,6 +93,14 @@ export const settingsChangeSchema = z.object({
   includeLocked: z.boolean().default(false),
 });
 
+/** Kanban : nouvelles colonnes et positions après un glisser-déposer. */
+export const reorderSchema = z.object({
+  items: z
+    .array(z.object({ id: z.string().min(1).max(64), status: z.enum(STATUS_IDS), position: z.number().int().min(0).max(100_000) }))
+    .min(1)
+    .max(500),
+});
+
 export const inviteSchema = z.object({
   pseudo: z
     .string()
@@ -108,6 +116,7 @@ export type ReleaseCreate = z.infer<typeof releaseCreateSchema>;
 export type TrackInputData = z.infer<typeof trackInputSchema>;
 export type TaskPatch = z.infer<typeof taskPatchSchema>;
 export type TaskCreate = z.infer<typeof taskCreateSchema>;
+export type Reorder = z.infer<typeof reorderSchema>;
 export type SettingsChange = z.infer<typeof settingsChangeSchema>;
 
 /** Premier message d'erreur lisible d'une validation zod. */

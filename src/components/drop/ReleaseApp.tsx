@@ -2,8 +2,10 @@
 // Drop : page d'une sortie. En-tête commun, onglets, filtre par titre (EP/Album) et fiche tâche.
 // Les tâches vivent dans un seul état : une modification dans une vue apparaît dans les autres.
 import { useCallback, useMemo, useState } from "react";
+import { reorder } from "@/drop/api";
 import { MODE_LABELS, TYPE_LABELS, countdownLabel, frShortDate } from "@/drop/labels";
 import type { ReleaseView, Task } from "@/drop/types";
+import Kanban, { type MoveItem } from "./Kanban";
 import Roadmap from "./Roadmap";
 import TaskSheet from "./TaskSheet";
 
@@ -21,20 +23,49 @@ const PROJECT = "__project";
 
 export default function ReleaseApp({ view, today, initialTab }: { view: ReleaseView; today: string; initialTab: ReleaseTab }) {
   const { release, tracks } = view;
-  const [tasks] = useState<Task[]>(view.tasks);
+  const [tasks, setTasks] = useState<Task[]>(view.tasks);
+  const [error, setError] = useState<string | null>(null);
+  const canEdit = view.role !== "viewer";
+
+  /** Mise à jour optimiste : l'écran change tout de suite, et revient en arrière si l'enregistrement échoue. */
+  const optimistic = (change: (list: Task[]) => Task[], request: () => Promise<unknown>) => {
+    const previous = tasks;
+    setTasks(change(tasks));
+    setError(null);
+    request().catch((e: Error) => {
+      setTasks(previous);
+      setError(e.message);
+    });
+  };
+
+  const move = (items: MoveItem[]) => {
+    const byId = new Map(items.map((i) => [i.id, i]));
+    optimistic(
+      (list) =>
+        list.map((t) =>
+          byId.has(t.id)
+            ? {
+                ...t,
+                status: byId.get(t.id)!.status,
+                position: byId.get(t.id)!.position,
+              }
+            : t,
+        ),
+      () => reorder(release.id, items),
+    );
+  };
   const [tab, setTab] = useState<ReleaseTab>(initialTab);
   const [trackFilter, setTrackFilter] = useState(ALL);
   const [openId, setOpenId] = useState<string | null>(null);
 
   const trackTitles = useMemo(() => Object.fromEntries(tracks.map((t) => [t.id, t.title])), [tracks]);
   const visible = useMemo(
-    () =>
-      trackFilter === ALL ? tasks : tasks.filter((t) => (trackFilter === PROJECT ? t.track_id === null : t.track_id === trackFilter)),
+    () => (trackFilter === ALL ? tasks : tasks.filter((t) => (trackFilter === PROJECT ? t.track_id === null : t.track_id === trackFilter))),
     [tasks, trackFilter],
   );
   const done = tasks.filter((t) => t.status === "publie").length;
   const progress = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
-  const openTask = openId ? tasks.find((t) => t.id === openId) ?? null : null;
+  const openTask = openId ? (tasks.find((t) => t.id === openId) ?? null) : null;
   const close = useCallback(() => setOpenId(null), []);
 
   const selectTab = (key: ReleaseTab) => {
@@ -106,21 +137,38 @@ export default function ReleaseApp({ view, today, initialTab }: { view: ReleaseV
 
       <div role="tabpanel">
         {tab === "feuille" && (
-          <Roadmap
-            tasks={visible}
-            today={today}
-            releaseDate={release.release_date}
-            warnings={release.warnings}
-            trackTitles={trackTitles}
-            onOpen={(t) => setOpenId(t.id)}
-          />
+          <div className="mx-auto max-w-3xl">
+            <Roadmap
+              tasks={visible}
+              today={today}
+              releaseDate={release.release_date}
+              warnings={release.warnings}
+              trackTitles={trackTitles}
+              onOpen={(t) => setOpenId(t.id)}
+            />
+          </div>
         )}
-        {tab !== "feuille" && (
+        {tab === "kanban" && (
+          <Kanban tasks={visible} today={today} trackTitles={trackTitles} canEdit={canEdit} onOpen={(t) => setOpenId(t.id)} onMove={move} />
+        )}
+        {(tab === "calendrier" || tab === "parametres") && (
           <p className="rounded-2xl border border-dashed border-white/15 p-6 text-center text-sm text-white/50">
             Cette vue arrive bientôt.
           </p>
         )}
       </div>
+
+      {error && (
+        <div
+          role="alert"
+          className="fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl bg-red-500 px-4 py-3 text-sm font-medium text-white shadow-xl"
+        >
+          <span>{error} Le changement a été annulé.</span>
+          <button type="button" onClick={() => setError(null)} className="min-h-11 shrink-0 px-2" aria-label="Fermer le message">
+            ✕
+          </button>
+        </div>
+      )}
 
       {openTask && (
         <TaskSheet task={openTask} today={today} trackTitle={openTask.track_id ? trackTitles[openTask.track_id] : null} onClose={close} />

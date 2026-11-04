@@ -11,7 +11,7 @@ import { addDays, diffDays, todayInParis } from "./engine/dates";
 import { generatePlan, proposeSingleDates } from "./engine/generate";
 import { reschedule } from "./engine/reschedule";
 import type { PlanInput, PlannedTask } from "./engine/types";
-import type { ReleaseCreate, SettingsChange, TaskCreate, TaskPatch } from "./inputs";
+import type { ReleaseCreate, Reorder, SettingsChange, TaskCreate, TaskPatch } from "./inputs";
 import type {
   Member,
   MemberRole,
@@ -483,6 +483,25 @@ export async function updateTask(userId: string, taskId: string, patch: TaskPatc
   await db().prepare(`UPDATE drop_tasks SET ${sets.join(", ")} WHERE id = ?1`).bind(...args).run();
   await touch(task.release_id);
   return toTask((await db().prepare("SELECT * FROM drop_tasks WHERE id = ?1").bind(taskId).first<Row>())!);
+}
+
+/** Kanban : statuts et positions de plusieurs tâches d'une même sortie, en une fois (tout ou rien). */
+export async function reorderTasks(userId: string, releaseId: string, items: Reorder["items"]) {
+  if (!(await releaseIf(userId, releaseId, "editTasks"))) return false;
+  const current = new Map((await tasksOf(releaseId)).map((t) => [t.id, t]));
+  if (items.some((i) => !current.has(i.id))) return false;
+  const at = now();
+  await db().batch(
+    items.map((i) => {
+      const before = current.get(i.id)!;
+      const completed = i.status === "publie" ? (before.completed_at ?? at) : null;
+      return db()
+        .prepare("UPDATE drop_tasks SET status = ?2, position = ?3, completed_at = ?4, updated_at = ?5 WHERE id = ?1 AND release_id = ?6")
+        .bind(i.id, i.status, i.position, completed, at, releaseId);
+    }),
+  );
+  await touch(releaseId);
+  return true;
 }
 
 /** Tâche personnalisée ajoutée par l'artiste (ou un éditeur). */

@@ -27,7 +27,7 @@ export default async function ReleasePage({
   const tab = TABS.includes(vue as ReleaseTab) ? (vue as ReleaseTab) : "feuille";
 
   return (
-    <Shell title={view.release.title} backHref="/drop" adminAs={(await isAdminSession(user)) ? user.pseudo : null}>
+    <Shell wide title={view.release.title} backHref="/drop" adminAs={(await isAdminSession(user)) ? user.pseudo : null}>
       <ReleaseApp view={view} today={todayInParis()} initialTab={tab} />
     </Shell>
   );
