@@ -176,6 +176,7 @@ describe("Recalage", () => {
     assert.equal(t.status, "programme");
     assert.equal(t.notes, "Tourné samedi");
     assert.equal(t.due_date, "2026-11-21", "date verrouillée conservée");
+    assert.equal(t.offset_days, -27, "le J de la tâche verrouillée suit le report (21 nov. → 18 déc.)");
     assert.ok(view.tasks.some((x) => x.plan_key === null), "tâche personnalisée conservée");
     assert.equal(view.tasks.find((x) => x.plan_key === "single_update_bios").due_date, "2026-12-18");
   });

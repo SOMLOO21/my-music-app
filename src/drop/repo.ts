@@ -440,6 +440,16 @@ export async function applySettings(userId: string, releaseId: string, change: S
     ...p.preview.removals.map((r) => db().prepare("DELETE FROM drop_tasks WHERE id = ?1").bind(r.id)),
     ...p.preview.additions.map((t, i) => insertTask(releaseId, t, maxPosition + 1 + i, at)),
   ];
+  // Tâches qui ne bougent pas (verrouillées, publiées, ajoutées à la main) : leur J suit le report de la sortie.
+  const shift = diffDays(p.release.release_date, p.next.release_date);
+  const moved = new Set(p.preview.moves.map((m) => m.id));
+  const removed = new Set(p.preview.removals.map((r) => r.id));
+  if (shift !== 0) {
+    for (const t of p.tasks) {
+      if (moved.has(t.id) || removed.has(t.id) || t.offset_days === null) continue;
+      statements.push(db().prepare("UPDATE drop_tasks SET offset_days = ?2 WHERE id = ?1").bind(t.id, t.offset_days - shift));
+    }
+  }
   // Plateformes des tâches gardées : seulement celles encore cochées.
   for (const t of p.tasks) {
     const target = t.plan_key ? planned.get(t.plan_key) : null;
