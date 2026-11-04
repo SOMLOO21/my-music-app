@@ -470,6 +470,8 @@ export async function updateTask(userId: string, taskId: string, patch: TaskPatc
   if (patch.dueDate !== undefined && patch.dueDate !== task.due_date) {
     set("due_date", patch.dueDate);
     set("date_locked", 1);
+    // Le J (J-7…) suit la nouvelle date, par rapport à la même sortie de référence.
+    if (task.offset_days !== null) set("offset_days", task.offset_days + diffDays(task.due_date, patch.dueDate));
   }
   if (patch.notes !== undefined) set("notes", patch.notes);
   if (patch.linkUrl !== undefined) set("link_url", patch.linkUrl);
