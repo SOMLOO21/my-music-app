@@ -113,7 +113,7 @@ app.post('/link/preview', async (c) => {
   const link: Link = {
     id: 'preview', user_id: c.get('user').id, slug: f.slug || 'apercu',
     title: f.title || 'Titre', artist: f.artist || 'Artiste',
-    artwork_url: /^https:\/\//.test(f.artwork_url) ? f.artwork_url : null,
+    artwork_url: ART_URL.test(f.artwork_url) ? f.artwork_url : null,
     accent: f.accent, theme: JSON.stringify(f.theme), custom_links: JSON.stringify(f.customLinks.filter((l) => l.title && /^https?:\/\//.test(l.url))),
     platforms: JSON.stringify(PLATFORMS.filter((p) => f.platforms[p.key]).map((p) => ({ key: p.key, url: f.platforms[p.key] }))),
     created_at: Date.now(),
@@ -187,6 +187,9 @@ function sniffImage(b: Uint8Array): string | null {
   return null;
 }
 
+// Pochette : lien https ou image importée (/l/media/<id>)
+const ART_URL = /^(https:\/\/[^\s"'<>]+|\/l\/media\/[a-f0-9]{16,40})$/;
+
 app.post('/link/upload', async (c) => {
   const user = c.get('user');
   const body = await c.req.parseBody();
@@ -199,7 +202,7 @@ app.post('/link/upload', async (c) => {
   const id = newId();
   await db
     .prepare('INSERT INTO ml_media (id, user_id, kind, content_type, data, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-    .bind(id, user.id, body.kind === 'icon' ? 'icon' : 'bg', type, bytes, Date.now())
+    .bind(id, user.id, body.kind === 'icon' ? 'icon' : body.kind === 'art' ? 'art' : 'bg', type, bytes, Date.now())
     .run();
   return c.json({ url: `/l/media/${id}` });
 });
@@ -275,7 +278,7 @@ app.get('/l/:slug', async (c) => {
   const source = detectSource(new URL(c.req.url), c.req.header('referer'), c.req.header('user-agent') || '');
   if (!BOT_UA.test(c.req.header('user-agent') || '')) later(logEvent(c, row.link.id, 'view', null, source));
   c.header('cache-control', 'no-store');
-  return html(c, publicPage(row.link, { pixelId: row.owner.pixel_id, source, appName: env.APP_NAME }));
+  return html(c, publicPage(row.link, { pixelId: row.owner.pixel_id, source, appName: env.APP_NAME, origin: appUrl(c.req.raw) }));
 });
 
 app.notFound((c) =>
@@ -340,7 +343,7 @@ async function saveLink(c: Context<AppEnv>, existing: Link | null) {
   if (taken && taken.id !== existing?.id) return fail('Cette adresse est déjà prise.');
   const badUrl = Object.entries(f.platforms).find(([, u]) => u && !/^https:\/\//.test(u));
   if (badUrl) return fail(`Le lien ${PLATFORM_BY_KEY[badUrl[0]].name} doit commencer par https://`);
-  if (f.artwork_url && !/^https:\/\//.test(f.artwork_url)) return fail('L’URL de la pochette doit commencer par https://');
+  if (f.artwork_url && !ART_URL.test(f.artwork_url)) return fail('L’URL de la pochette doit commencer par https:// (ou importe l’image).');
   const badCustom = f.customLinks.find((l) => !l.title || !/^https?:\/\/[^\s]+\.[^\s]+/.test(l.url));
   if (badCustom) return fail(`Lien « ${badCustom.title || badCustom.url} » : il faut un titre et une adresse complète (https://…).`);
 

@@ -93,6 +93,7 @@ export type PublicOpts = {
   pixelId: string | null;
   source: string;
   appName: string;
+  origin?: string; // pour rendre absolue une pochette importée (og:image)
   preview?: boolean; // aperçu dans l'éditeur : pas de tracking, pas de navigation
 };
 
@@ -161,7 +162,7 @@ export function publicPage(link: Link, opts: PublicOpts) {
 <meta name="theme-color" content="${theme.bg === 'cover' ? '#0b0b10' : theme.bg1}">
 <meta property="og:title" content="${link.title} — ${link.artist}">
 <meta property="og:type" content="music.song">
-${link.artwork_url ? h`<meta property="og:image" content="${link.artwork_url}">` : ''}
+${link.artwork_url ? h`<meta property="og:image" content="${link.artwork_url.startsWith('/') ? (opts.origin || '') + link.artwork_url : link.artwork_url}">` : ''}
 <meta name="twitter:card" content="summary_large_image">`,
   });
 }

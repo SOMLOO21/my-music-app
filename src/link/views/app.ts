@@ -48,6 +48,8 @@ body{background:#fafafa}
 .slugin{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
 .slugin span{padding:0 10px;color:var(--muted);font-size:13px;background:#f8fafc;height:42px;display:flex;align-items:center;border-right:1px solid var(--line)}
 .slugin input{border:0;border-radius:0}
+.artin{display:flex;align-items:center;gap:8px}.artin input{flex:1;min-width:0}.artin .btn{height:42px;flex:none}
+.artin img{width:42px;height:42px;border-radius:8px;object-fit:cover;display:none;flex:none;border:1px solid var(--line)}.artin img.on{display:block}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .stat{padding:20px}
 .stat b{display:block;font-size:30px;font-weight:800;letter-spacing:-.03em}
@@ -211,7 +213,7 @@ export function editor(user: User, f: LinkForm, base: string, opts: { msg?: { er
               <div class="field"><label>Titre</label><input name="title" required value="${f.title}" id="f-title"></div>
               <div class="field"><label>Artiste</label><input name="artist" required value="${f.artist}" id="f-artist"></div>
             </div>
-            <div class="field"><label>URL de la pochette</label><input name="artwork_url" value="${f.artwork_url}" id="f-art" placeholder="https://…"></div>
+            <div class="field"><label>Pochette</label><div class="artin"><img id="art-img" src="${f.artwork_url || 'data:,'}" alt="" class="${f.artwork_url ? 'on' : ''}"><input name="artwork_url" value="${f.artwork_url}" id="f-art" placeholder="Lien https://… ou importe une image"><button type="button" class="btn ghost" id="art-pick">Importer</button><input type="file" id="art-file" accept="image/jpeg,image/png,image/webp,image/avif" hidden></div><div class="hint" id="art-status">Image carrée recadrée automatiquement (playlist, sortie pas encore en ligne…).</div></div>
             <div class="field"><label>Adresse du lien</label><div class="slugin"><span>${host}/l/</span><input name="slug" required pattern="[a-z0-9-]{3,60}" value="${f.slug}" placeholder="artiste-titre"></div><div class="hint">Minuscules, chiffres et tirets.</div></div>
           </div>
           ${appearancePanel(f)}
@@ -536,6 +538,30 @@ const EDITOR_JS = `
     }).catch(function(){ pick.classList.remove('busy'); cStatus.textContent="L'envoi a échoué, réessaie."; });
   });
   limit();
+
+  // ── Pochette importée : recadrée en carré 1200 px (JPEG) ──
+  var artIn=document.getElementById('art-file'), artImg=document.getElementById('art-img'), artSt=document.getElementById('art-status'), artHint=artSt.textContent;
+  function squareArt(file){
+    return createImageBitmap(file).then(function(img){
+      var side=Math.min(img.width,img.height), size=Math.min(1200,side), cv=document.createElement('canvas'); cv.width=cv.height=size;
+      cv.getContext('2d').drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,size,size);
+      return new Promise(function(res){ cv.toBlob(function(b){res(b||file)},'image/jpeg',0.88); });
+    }).catch(function(){ return file; });
+  }
+  document.getElementById('art-pick').addEventListener('click',function(){artIn.click()});
+  artIn.addEventListener('change',function(){
+    var file=artIn.files[0]; artIn.value=''; if(!file) return;
+    if(!/^image\\/(jpeg|png|webp|avif)$/.test(file.type)){ artSt.textContent='Formats acceptés : JPG, PNG, WebP, AVIF'; return; }
+    artSt.textContent='Envoi de la pochette…';
+    squareArt(file).then(function(blob){
+      var fd=new FormData(); fd.append('file',blob,'pochette.jpg'); fd.append('kind','art');
+      return fetch('/link/upload',{method:'POST',body:fd}).then(function(r){return r.json()});
+    }).then(function(d){
+      if(d.error){ artSt.textContent=d.error; return; }
+      form.artwork_url.value=d.url; artImg.src=d.url; artImg.classList.add('on'); artSt.textContent=artHint; sync(); refresh();
+    }).catch(function(){ artSt.textContent="L'envoi a échoué, réessaie."; });
+  });
+  form.artwork_url.addEventListener('input',function(){ var v=form.artwork_url.value.trim(); artImg.classList.toggle('on',!!v); artImg.src=v||'data:,'; });
 
   window.addEventListener('resize',fit);
   sync(); fit(); refresh();
